@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE packagegui SYSTEM "./schema/packages.dtd">
+<?xml-stylesheet type="text/xsl" href="./xsl/package.xsl"?>
+<packagegui>
+	<copyright>
+	<![CDATA[
+/*
+ * net-snmp_traplisten.xml
+ *
+ * part of pfSense (https://www.pfsense.org)
+ * Copyright (c) 2017 Rubicon Communications, LLC (Netgate)
+ * All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+	]]>
+	</copyright>
+	<name>netsnmp_traplisten</name>
+	<title>net-snmp: Trap Listen</title>
+	<include_file>/usr/local/pkg/net-snmp.inc</include_file>
+	<tabs>
+		<tab>
+			<text>General</text>
+			<url>/pkg_edit.php?xml=net-snmp.xml</url>
+		</tab>
+		<tab>
+			<text>Host Information</text>
+			<url>/pkg_edit.php?xml=net-snmp_hostinfo.xml</url>
+		</tab>
+		<tab>
+			<text>Users</text>
+			<url>/pkg.php?xml=net-snmp_users.xml</url>
+		</tab>
+		<tab>
+			<text>Communities</text>
+			<url>/pkg.php?xml=net-snmp_communities.xml</url>
+		</tab>
+		<tab>
+			<text>Trap Generation</text>
+			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
+		</tab>
+		<tab>
+			<text>Trap Listen</text>
+			<url>/pkg_edit.php?xml=net-snmp_traplisten.xml</url>
+			<active/>
+		</tab>
+	</tabs>
+	<advanced_options>enabled</advanced_options>
+	<fields>
+		<field>
+			<name>SNMP Trap Daemon Configuration</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Enable snmptrapd</fielddescr>
+			<fieldname>enable_snmptrapd</fieldname>
+			<description>Check to enable snmptrapd to receive traps.</description>
+			<type>checkbox</type>
+		</field>
+		<field>
+			<fielddescr>Interface Binding</fielddescr>
+			<fieldname>none</fieldname>
+			<type>rowhelper</type>
+			<rowhelper>
+				<rowhelperfield>
+					<fielddescr>Transport Type</fielddescr>
+					<fieldname>transport</fieldname>
+					<description><![CDATA[The protocol used by this binding.]]></description>
+					<type>select</type>
+					<default_value>udp</default_value>
+					<options>
+						<option><name>UDP</name><value>udp</value></option>
+						<option><name>UDP6</name><value>udp6</value></option>
+						<option><name>TCP</name><value>tcp</value></option>
+						<option><name>TCP6</name><value>tcp6</value></option>
+						<option><name>DTLS/UDP</name><value>dtlsudp</value></option>
+					</options>
+					<width>2</width>
+				</rowhelperfield>
+				<rowhelperfield>
+					<fielddescr>IP Address/Hostname</fielddescr>
+					<fieldname>ipaddress</fieldname>
+					<description><![CDATA[IP address or hostname to bind. Leave blank to bind UDP on all interfaces. For DTLS, this must be a hostname.]]></description>
+					<type>input</type>
+					<width>2</width>
+				</rowhelperfield>
+				<rowhelperfield>
+					<fielddescr>Port</fielddescr>
+					<fieldname>snmpport</fieldname>
+					<description><![CDATA[The port used to bind (default: 161).]]></description>
+					<type>input</type>
+					<width>1</width>
+					<default_value>161</default_value>
+					<required/>
+				</rowhelperfield>
+			</rowhelper>
+		</field>
+
+		<field>
+			<fielddescr>Retain Notification Logs</fielddescr>
+			<fieldname>donotretainnotificationlogs</fieldname>
+			<description><![CDATA[Controls whether or not the daemon uses NOTIFICATION-LOG-MIB to keep a record of received traps internally.]]></description>
+			<type>select</type>
+			<default_value>no</default_value>
+			<options>
+				<option><name>Retain</name><value>no</value></option>
+				<option><name>Do Not Retain</name><value>yes</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Log Received Traps</fielddescr>
+			<fieldname>donotlogtraps</fieldname>
+			<description><![CDATA[Disables logging of traps entirely.]]></description>
+			<type>select</type>
+			<default_value>no</default_value>
+			<options>
+				<option><name>Log Traps</name><value>no</value></option>
+				<option><name>Do Not Log Traps</name><value>yes</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Ignore Auth Failure Traps</fielddescr>
+			<fieldname>ignoreauthfailure</fieldname>
+			<description><![CDATA[Disables logging of authentication traps. Trap handlers will still trigger.]]></description>
+			<type>select</type>
+			<default_value>no</default_value>
+			<options>
+				<option><name>Log Authentication Failures</name><value>no</value></option>
+				<option><name>Do Not Log Authentication Failures</name><value>yes</value></option>
+			</options>
+		</field>
+
+<!-- https://www.freebsd.org/cgi/man.cgi?query=snmpcmd&sektion=1&apropos=0&manpath=FreeBSD+11.0-RELEASE+and+Ports#LOGGING_OPTIONS -->
+		<field>
+			<fielddescr>Log Option</fielddescr>
+			<fieldname>logoption</fieldname>
+			<description><![CDATA[A log option string to use (e.g. "-Ls d").]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+
+<!-- https://www.freebsd.org/cgi/man.cgi?query=snmpcmd&sektion=1&apropos=0&manpath=FreeBSD+11.0-RELEASE+and+Ports#OUTPUT_OPTIONS -->
+		<field>
+			<fielddescr>Output Option</fielddescr>
+			<fieldname>outputoption</fieldname>
+			<description><![CDATA[An output option string to use (e.g. "-On").]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<name>Authorization</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Use Authorization</fielddescr>
+			<fieldname>disableauthorization</fieldname>
+			<description><![CDATA[Enables or Disables Authorization Checks.]]></description>
+			<type>select</type>
+			<default_value>no</default_value>
+			<options>
+				<option><name>Enable Authorization</name><value>no</value></option>
+				<option><name>Disable Authorization</name><value>yes</value></option>
+			</options>
+		</field>
+
+<!--
+                  Types= log,execute,net
+- authCommunity   TYPES COMMUNITY  [SOURCE [OID | -v VIEW ]]
+-->
+		<field>
+			<fielddescr>Auth Community 1</fielddescr>
+			<fieldname>authcommunity1</fieldname>
+			<description><![CDATA[ Authorization community specification: TYPES COMMUNITY  [SOURCE [OID]] ]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Auth Community 2</fielddescr>
+			<fieldname>authcommunity2</fieldname>
+			<description><![CDATA[ Authorization community specification: TYPES COMMUNITY  [SOURCE [OID]] ]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Auth Community 3</fielddescr>
+			<fieldname>authcommunity3</fieldname>
+			<description><![CDATA[ Authorization community specification: TYPES COMMUNITY  [SOURCE [OID]] ]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+
+<!--
+Authorization:
+- authUser   TYPES [-s MODEL] USER  [LEVEL [OID | -v VIEW ]]
+-->
+		<field>
+			<fielddescr>Auth User 1</fielddescr>
+			<fieldname>authuser1</fieldname>
+			<description><![CDATA[ Authorization user specification: TYPES [-s MODEL] USER  [LEVEL [OID]] ]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Auth User 2</fielddescr>
+			<fieldname>authuser2</fieldname>
+			<description><![CDATA[ Authorization user specification: TYPES [-s MODEL] USER  [LEVEL [OID]] ]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Auth User 3</fielddescr>
+			<fieldname>authuser3</fieldname>
+			<description><![CDATA[ Authorization user specification: TYPES [-s MODEL] USER  [LEVEL [OID]] ]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+
+		<field>
+			<name>Format</name>
+			<type>listtopic</type>
+		</field>
+
+<!-- https://www.freebsd.org/cgi/man.cgi?query=snmptrapd&sektion=8&apropos=0&manpath=FreeBSD+11.0-RELEASE+and+Ports#FORMAT_SPECIFICATIONS -->
+		<field>
+			<fielddescr>SNMPv1 Format</fielddescr>
+			<fieldname>format1</fieldname>
+			<description><![CDATA[Custom format to display for SNMPv1 Traps (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+		<field>
+			<fielddescr>SNMPv2c/3 Format</fielddescr>
+			<fieldname>format1</fieldname>
+			<description><![CDATA[Custom format to display for SNMPv2c and SNMPv3 Trap/Inform notifications (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+
+<!--
+DESTINATION
+              is one of: print, print1, print2,  syslog, syslog1, syslog2,
+              execute, execute1, execute2.  print1 is used for printing SNMPv1
+              traps, print2 is for SNMPv2.  print is used for both versions.
+              syslog is similarly used when sending traps to syslog, and
+              execute used when sending traps to a program such as
+              traptoemail(1).
+-->
+		<field>
+			<fielddescr>Custom Format 1</fielddescr>
+			<fieldname>format_custom1</fieldname>
+			<description><![CDATA[Custom format for different destinations, e.g.: DESTINATION FORMAT (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+		<field>
+			<fielddescr>Custom Format 2</fielddescr>
+			<fieldname>format_custom2</fieldname>
+			<description><![CDATA[Custom format for different destinations, e.g.: DESTINATION FORMAT (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+		<field>
+			<fielddescr>Custom Format 3</fielddescr>
+			<fieldname>format_custom3</fieldname>
+			<description><![CDATA[Custom format for different destinations, e.g.: DESTINATION FORMAT (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+
+		<field>
+			<name>Trap Handles</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Trap Handler 1</fielddescr>
+			<fieldname>traphandle1</fieldname>
+			<description><![CDATA[Trap Handler for different destinations, e.g.: OID|default PROGRAM [ARGS ...] (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+		<field>
+			<fielddescr>Trap Handler 2</fielddescr>
+			<fieldname>traphandle2</fieldname>
+			<description><![CDATA[Trap Handler for different destinations, e.g.: OID|default PROGRAM [ARGS ...] (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+		<field>
+			<fielddescr>Trap Handler 3</fielddescr>
+			<fieldname>traphandle3</fieldname>
+			<description><![CDATA[Trap Handler for different destinations, e.g.: OID|default PROGRAM [ARGS ...] (optional)]]></description>
+			<type>input</type>
+			<size>40</size>
+		</field>
+
+		<field>
+			<fielddescr>Custom Options</fielddescr>
+			<fieldname>custom_options</fieldname>
+			<description>
+				<![CDATA[
+				Custom options to add into the snmptrapd.conf file as-is.
+				]]>
+			</description>
+			<type>textarea</type>
+			<cols>78</cols>
+			<rows>5</rows>
+			<advancedfield/>
+		</field>
+	</fields>
+</packagegui>

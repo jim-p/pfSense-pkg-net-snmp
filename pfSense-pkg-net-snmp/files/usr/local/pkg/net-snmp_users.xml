@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE packagegui SYSTEM "./schema/packages.dtd">
+<?xml-stylesheet type="text/xsl" href="./xsl/package.xsl"?>
+<packagegui>
+	<copyright>
+	<![CDATA[
+/*
+ * net-snmp_users.xml
+ *
+ * part of pfSense (https://www.pfsense.org)
+ * Copyright (c) 2017 Rubicon Communications, LLC (Netgate)
+ * All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+	]]>
+	</copyright>
+	<name>netsnmp_users</name>
+	<title>net-snmp: Users</title>
+	<include_file>/usr/local/pkg/net-snmp.inc</include_file>
+	<tabs>
+		<tab>
+			<text>General</text>
+			<url>/pkg_edit.php?xml=net-snmp.xml</url>
+		</tab>
+		<tab>
+			<text>Host Information</text>
+			<url>/pkg_edit.php?xml=net-snmp_hostinfo.xml</url>
+		</tab>
+		<tab>
+			<text>Users</text>
+			<url>/pkg.php?xml=net-snmp_users.xml</url>
+			<active/>
+		</tab>
+		<tab>
+			<text>Communities</text>
+			<url>/pkg.php?xml=net-snmp_communities.xml</url>
+		</tab>
+		<tab>
+			<text>Trap Generation</text>
+			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
+		</tab>
+		<tab>
+			<text>Trap Listen</text>
+			<url>/pkg_edit.php?xml=net-snmp_traplisten.xml</url>
+		</tab>
+	</tabs>
+	<delete_string>SNMP user deleted</delete_string>
+	<addedit_string>SNMP user created/modified</addedit_string>
+	<adddeleteeditpagefields>
+		<columnitem>
+			<fielddescr>Username</fielddescr>
+			<fieldname>username</fieldname>
+		</columnitem>
+		<columnitem>
+			<fielddescr>Fingerprint</fielddescr>
+			<fieldname>fingerprint</fieldname>
+		</columnitem>
+		<columnitem>
+			<fielddescr>Description</fielddescr>
+			<fieldname>description</fieldname>
+		</columnitem>
+	</adddeleteeditpagefields>
+	<fields>
+		<field>
+			<name>SNMPv3 Entry Type</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Entry Type</fielddescr>
+			<fieldname>snmpv3_type</fieldname>
+			<description><![CDATA[The type of entry described by these settings.
+				<br/>In a User Entry, only the SNMPv3 USM User Configuration and Access Control sections will be used.
+				With a Certificate Mapping entry, only the Certificate Mapping section will be used. ]]></description>
+			<type>select</type>
+			<default_value>user</default_value>
+			<options>
+				<option><name>User Entry</name><value>user</value></option>
+				<option><name>Certificate Mapping</name><value>cert</value></option>
+				<option><name>Both</name><value>both</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Description</fielddescr>
+			<fieldname>description</fieldname>
+			<description><![CDATA[A description of this entry.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+
+		<field>
+			<name>SNMPv3 USM User Configuration</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Username</fielddescr>
+			<fieldname>username</fieldname>
+			<description><![CDATA[SNMPv3 username, including any prefixes.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Authentication Type</fielddescr>
+			<fieldname>authtype</fieldname>
+			<description><![CDATA[The type of authentication to use.]]></description>
+			<type>select</type>
+			<default_value>SHA</default_value>
+			<options>
+				<option><name>SHA</name><value>SHA</value></option>
+				<option><name>MD5</name><value>MD5</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Password</fielddescr>
+			<fieldname>password</fieldname>
+			<description>Enter the password here. Must be 8 characters or longer.</description>
+			<type>password</type>
+			<required/>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Privacy Protocol</fielddescr>
+			<fieldname>privacyprotocol</fieldname>
+			<description><![CDATA[The type of privacy protocol (encryption) to use.]]></description>
+			<type>select</type>
+			<default_value>AES</default_value>
+			<options>
+				<option><name>AES</name><value>AES</value></option>
+				<option><name>DES</name><value>DES</value></option>
+				<option><name>None</name><value>none</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Passphrase</fielddescr>
+			<fieldname>passphrase</fieldname>
+			<description>Enter the privacy passphrase to use with the privacy protocol. Optional. If left blank, the password will be used.</description>
+			<type>password</type>
+			<required/>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Security Model</fielddescr>
+			<fieldname>secmodel</fieldname>
+			<description><![CDATA[The security model for this user.]]></description>
+			<type>select</type>
+			<default_value>usm</default_value>
+			<options>
+				<option><name>User Security (usm)</name><value>usm</value></option>
+				<option><name>Transport Security (tsm)</name><value>tsm</value></option>
+			</options>
+		</field>
+
+		<field>
+			<name>SNMPv3 Access Control</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Read/Write Access</fielddescr>
+			<fieldname>rorwuser</fieldname>
+			<description><![CDATA[Select the type of access this user will have.]]></description>
+			<type>select</type>
+			<default_value>rouser</default_value>
+			<options>
+				<option><name>Read Only (GET, GETNEXT)</name><value>rouser</value></option>
+				<option><name>Read/Write (GET, GETNEXT, SET)</name><value>rwuser</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Minimum Security Level</fielddescr>
+			<fieldname>minseclev</fieldname>
+			<description><![CDATA[The minimum security level allowed for this user.]]></description>
+			<type>select</type>
+			<default_value>priv</default_value>
+			<options>
+				<option><name>Private (Encryption Required)</name><value>priv</value></option>
+				<option><name>Authenticated</name><value>auth</value></option>
+				<option><name>Unauthenticated</name><value>noauth</value></option>
+				<option><name>Unspecified</name><value>none</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Base OID</fielddescr>
+			<fieldname>baseoid</fieldname>
+			<description><![CDATA[Restrict the user to part of the tree rooted at this OID. Leave blank to allow full access.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<name>SNMPv3 Certificate Mapping Information</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Priority</fielddescr>
+			<fieldname>priority</fieldname>
+			<description><![CDATA[A numerical priority for matching this mapping.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Cert Fingerprint</fielddescr>
+			<fieldname>fingerprint</fieldname>
+			<description><![CDATA[The fingerprint of a certificate to match.]]></description>
+			<type>input</type>
+			<size>80</size>
+		</field>
+		<field>
+			<fielddescr>Certificate Field</fielddescr>
+			<fieldname>options</fieldname>
+			<description><![CDATA[The field of the certificate to use when mapping a username.]]></description>
+			<type>select</type>
+			<default_value>cn</default_value>
+			<options>
+				<option><name>Common Name (cn)</name><value>cn</value></option>
+				<option><name>Manual Security Name (Enter Below)</name><value>sn</value></option>
+				<option><name>SAN E-Mail Address (rfc822)</name><value>rfc822</value></option>
+				<option><name>SAN Hostname/DNS (dns)</name><value>dns</value></option>
+				<option><name>SAN IP Address (ip)</name><value>ip</value></option>
+				<option><name>Any SAN Value</name><value>any</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Security Name</fielddescr>
+			<fieldname>secname</fieldname>
+			<description><![CDATA[The name to use when Manual Security Name is chosen above.]]></description>
+			<type>input</type>
+			<size>30</size>
+		</field>
+	</fields>
+	<custom_php_resync_config_command>
+		netsnmp_resync();
+	</custom_php_resync_config_command>
+</packagegui>
