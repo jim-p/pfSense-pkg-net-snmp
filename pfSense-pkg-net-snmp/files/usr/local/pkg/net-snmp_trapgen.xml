@@ -50,6 +50,10 @@
 			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
 			<active/>
 		</tab>
+		<tab>
+			<text>[SNMP Trap Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmptrapd.xml</url>
+		</tab>
 	</tabs>
 	<fields>
 		<field>
@@ -57,9 +61,23 @@
 			<type>listtopic</type>
 		</field>
 		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				SNMP Traps are conditions that, when met, trigger a notification response.
+				The type of response varies depending on the SNMP version and monitored conditions.
+				<br/><br/>
+				This section controls how this SNMP daemon triggers and sends traps to another
+				host acting as a trap receiver or "sink", such as snmptrapd. The trap sink can then
+				act on the trap in various ways (e.g. logging, executing a program, or forwarding the trap)
+				]]>
+			</description>
+			<type>info</type>
+		</field>
+		<field>
 			<fielddescr>Trap Community Name</fielddescr>
 			<fieldname>trapcommunity</fieldname>
-			<description><![CDATA[SNMPv1/v2c Trap community name.]]></description>
+			<description><![CDATA[SNMPv1/v2c Trap community name send inside the trap, as a means of identification.]]></description>
 			<type>input</type>
 			<size>20</size>
 		</field>
@@ -88,7 +106,15 @@
 		<field>
 			<fielddescr>Default Monitors</fielddescr>
 			<fieldname>defaultmonitors</fieldname>
-			<description><![CDATA[Use a basic set of default monitors for generating notifications.]]></description>
+			<description>
+				<![CDATA[
+				Use a basic set of default monitors for generating notifications.
+				<div class="infoblock">
+					The default set of monitors watches the process table, memory usage,
+					disk error, interface link error, and file error tables.
+				</div>
+				]]>
+			</description>
 			<type>select</type>
 			<default_value>yes</default_value>
 			<options>
@@ -100,7 +126,8 @@
 		<field>
 			<fielddescr>Internal Query User</fielddescr>
 			<fieldname>iquerySecName</fieldname>
-			<description><![CDATA[Choose the username used internally for querying information for evaluating expressions or building notification payloads.]]></description>
+			<description><![CDATA[Choose the username used internally for querying information for evaluating expressions or building notification payloads.
+				<br/>Create a user on the Users tab before selecting a value in this field.]]></description>
 			<type>select_source</type>
 			<source><![CDATA[netsnmp_get_usernames()]]></source>
 			<source_name>descr</source_name>
@@ -352,6 +379,23 @@
 			<type>listtopic</type>
 		</field>
 		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				Monitors define MIB conditions to check which can generate a trap.
+				If a defined expression evaluates to a true result, then the corresponding
+				event is triggered.
+				<br/><br/>
+				Monitors are very advanced and have many possible combinations, thus are not validated by this GUI.
+				Ensure the syntax is proper before saving.
+				<br/><br/>
+				For more information on these fields, consult the
+				<a href="https://www.freebsd.org/cgi/man.cgi?query=snmpd.conf&apropos=0&sektion=5&manpath=FreeBSD+11.0-RELEASE+and+Ports&arch=default&format=html#ACTIVE_MONITORING">snmpd.conf manual page</a>
+				]]>
+			</description>
+			<type>info</type>
+		</field>
+		<field>
 			<fielddescr>Monitors</fielddescr>
 			<fieldname>none</fieldname>
 			<type>rowhelper</type>
@@ -382,7 +426,7 @@
 				<rowhelperfield>
 					<fielddescr>Notification Event</fielddescr>
 					<fieldname>monitor_notificationevent</fieldname>
-					<description><![CDATA[Notification Event Details: NOTIFICATION [-m] [-i OID | -o OID ]*. ]]></description>
+					<description><![CDATA[Notification Event Details: NOTIFICATION [-m] [-i OID | -o OID ]*. (notificationEvent)]]></description>
 					<type>input</type>
 					<width>2</width>
 					<required/>
@@ -390,7 +434,7 @@
 				<rowhelperfield>
 					<fielddescr>Event</fielddescr>
 					<fieldname>monitor_setevent</fieldname>
-					<description><![CDATA[Enter an "OID = Value" expression to set when the event triggers.]]></description>
+					<description><![CDATA[Enter an "OID = Value" expression to set when the event triggers (setEvent).]]></description>
 					<type>input</type>
 					<width>2</width>
 					<required/>

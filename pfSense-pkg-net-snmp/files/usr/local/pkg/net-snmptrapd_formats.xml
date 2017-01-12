@@ -34,11 +34,11 @@
 			<url>/pkg_edit.php?xml=net-snmptrapd.xml</url>
 		</tab>
 		<tab>
-			<text>Community Authorization</text>
+			<text>Community Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_communities.xml</url>
 		</tab>
 		<tab>
-			<text>User Authorization</text>
+			<text>User Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_users.xml</url>
 		</tab>
 		<tab>
@@ -50,14 +50,32 @@
 			<text>Trap Handles</text>
 			<url>/pkg.php?xml=net-snmptrapd_traphandles.xml</url>
 		</tab>
+		<tab>
+			<text>Trap Forwards</text>
+			<url>/pkg.php?xml=net-snmptrapd_forwards.xml</url>
+		</tab>
+		<tab>
+			<text>[SNMP Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmp.xml</url>
+		</tab>
 	</tabs>
 	<fields>
 		<field>
-			<name>Format</name>
+			<name>Trap Format Configuration</name>
 			<type>listtopic</type>
 		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				The settings on this tab control the format used with traps from various sources.
+				The format used is similar to printf, and the full list of supported characters can be found in
+				<a href="https://www.freebsd.org/cgi/man.cgi?query=snmptrapd&sektion=8&apropos=0&manpath=FreeBSD+11.0-RELEASE+and+Ports#FORMAT_SPECIFICATIONS">the snmptrapd manual page</a>.
+				]]>
+			</description>
+			<type>info</type>
+		</field>
 
-<!-- https://www.freebsd.org/cgi/man.cgi?query=snmptrapd&sektion=8&apropos=0&manpath=FreeBSD+11.0-RELEASE+and+Ports#FORMAT_SPECIFICATIONS -->
 		<field>
 			<fielddescr>SNMPv1 Format</fielddescr>
 			<fieldname>format1</fieldname>
@@ -71,6 +89,19 @@
 			<description><![CDATA[Custom format to display for SNMPv2c and SNMPv3 Trap/Inform notifications (optional)]]></description>
 			<type>input</type>
 			<size>40</size>
+		</field>
+
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				The custom format list defines formats for different destinations and SNMP versions.
+				Only one format should be defined for any one destination.
+				For a list of the default formats, consult the
+				<a href="https://www.freebsd.org/cgi/man.cgi?query=snmptrapd.conf&sektion=5&apropos=0&manpath=FreeBSD+11.0-RELEASE+and+Ports#LOGGING">the snmptrapd.conf manual page</a>.
+				]]>
+			</description>
+			<type>info</type>
 		</field>
 		<field>
 			<fielddescr>Custom Format</fielddescr>

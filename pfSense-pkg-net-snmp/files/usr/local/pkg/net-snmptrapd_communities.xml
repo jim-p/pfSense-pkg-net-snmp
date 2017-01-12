@@ -34,12 +34,12 @@
 			<url>/pkg_edit.php?xml=net-snmptrapd.xml</url>
 		</tab>
 		<tab>
-			<text>Community Authorization</text>
+			<text>Community Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_communities.xml</url>
 			<active/>
 		</tab>
 		<tab>
-			<text>User Authorization</text>
+			<text>User Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_users.xml</url>
 		</tab>
 		<tab>
@@ -50,6 +50,14 @@
 			<text>Trap Handles</text>
 			<url>/pkg.php?xml=net-snmptrapd_traphandles.xml</url>
 		</tab>
+		<tab>
+			<text>Trap Forwards</text>
+			<url>/pkg.php?xml=net-snmptrapd_forwards.xml</url>
+		</tab>
+		<tab>
+			<text>[SNMP Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmp.xml</url>
+		</tab>
 	</tabs>
 	<delete_string>snmptrapd auth community deleted</delete_string>
 	<addedit_string>snmptrapd auth community created/modified</addedit_string>
@@ -58,27 +66,68 @@
 			<fielddescr>Auth Community</fielddescr>
 			<fieldname>authcommunity</fieldname>
 		</columnitem>
+		<columnitem>
+			<fielddescr>Process Type</fielddescr>
+			<fieldname>type</fieldname>
+		</columnitem>
+		<columnitem>
+			<fielddescr>Description</fielddescr>
+			<fieldname>description</fieldname>
+		</columnitem>
 	</adddeleteeditpagefields>
 	<fields>
-<!-- authCommunity log COMMUNITY [SOURCE [OID]] -->
+		<field>
+			<name>Community Authorization Configuration</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				Community Authorization defines communities which are allowed to send traps to this daemon and what actions the daemon will allow.
+				Restrictions may also be placed on the community to limit where the traps may arrive from, and what part of the OID tree it is allowed to work with.
+				]]>
+			</description>
+			<type>info</type>
+		</field>
 		<field>
 			<fielddescr>Auth Community</fielddescr>
 			<fieldname>authcommunity</fieldname>
-			<description><![CDATA[ Authorization community ]]></description>
+			<description><![CDATA[The community name to allow as a source on incoming traps.]]></description>
 			<type>input</type>
 			<size>20</size>
 		</field>
 		<field>
+			<fielddescr>Description</fielddescr>
+			<fieldname>description</fieldname>
+			<description><![CDATA[A description of this entry.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Process Type</fielddescr>
+			<fieldname>type</fieldname>
+			<description><![CDATA[Type of events to process using this entry. If no types are slected, all types will be used.]]></description>
+			<type>select</type>
+			<multiple/>
+			<options>
+				<option><name>Log Trap Event (log)</name><value>log</value></option>
+				<option><name>Forward Trap to another Host (net)</name><value>net</value></option>
+				<option><name>Execute a Trap Handle (execute)</name><value>execute</value></option>
+			</options>
+			<size>3</size>
+		</field>
+		<field>
 			<fielddescr>Source Restriction</fielddescr>
 			<fieldname>source</fieldname>
-			<description><![CDATA[Restrict access to a specified address or subnet. Leave blank to allow full access.]]></description>
+			<description><![CDATA[Restrict access to a specified address or subnet. Leave blank to allow full access. Enter "default" to set a base OID restriction for this community from any source.]]></description>
 			<type>input</type>
 			<size>20</size>
 		</field>
 		<field>
 			<fielddescr>Base OID</fielddescr>
 			<fieldname>baseoid</fieldname>
-			<description><![CDATA[Restrict the community to part of the tree rooted at this OID. Leave blank to allow full access.]]></description>
+			<description><![CDATA[Restrict the community to part of the tree rooted at this OID. Leave blank to allow full access. A Source Restriction must be set. ]]></description>
 			<type>input</type>
 			<size>20</size>
 		</field>

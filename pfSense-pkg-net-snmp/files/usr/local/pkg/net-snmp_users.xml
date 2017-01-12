@@ -50,6 +50,10 @@
 			<text>Trap Generation</text>
 			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
 		</tab>
+		<tab>
+			<text>[SNMP Trap Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmptrapd.xml</url>
+		</tab>
 	</tabs>
 	<delete_string>SNMP user deleted</delete_string>
 	<addedit_string>SNMP user created/modified</addedit_string>
@@ -99,6 +103,28 @@
 			<type>listtopic</type>
 		</field>
 		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				SNMPv3 USM user configuration is relatively easy for clients to use. The parameters can be supplied on the command line or stored in ~/.snmp/snmp.conf
+				<div class="infoblock">
+					To utilize user authentication at the command line, which is not secure, supply all of the parameters:
+					<pre>snmpget -v 3 -l authPriv -a SHA -A 1234567890 -u myuser -x AES -X 1234567890 localhost nsExtendOutputFull.\"ls\"</pre>
+					To define the parameters more securely, create a file in ~/.snmp/snmp.conf with permissions such that it can only be read by the user (e.g. 0600), with the following contents:
+					<pre>
+defSecurityName myuser
+defSecurityLevel authPriv
+defAuthType SHA
+defAuthPassphrase mypassword
+defdefPrivType AES
+defPrivPassphrase mypassphrase
+defVersion 3</pre>
+				</div>
+				]]>
+			</description>
+			<type>info</type>
+		</field>
+		<field>
 			<fielddescr>Username</fielddescr>
 			<fieldname>username</fieldname>
 			<description><![CDATA[SNMPv3 username, including any prefixes.]]></description>
@@ -108,7 +134,7 @@
 		<field>
 			<fielddescr>Authentication Type</fielddescr>
 			<fieldname>authtype</fieldname>
-			<description><![CDATA[The type of authentication to use.]]></description>
+			<description><![CDATA[The authentication algorithm to use. SHA is more secure, but may not be supported by all clients.]]></description>
 			<type>select</type>
 			<default_value>SHA</default_value>
 			<options>
@@ -127,7 +153,7 @@
 		<field>
 			<fielddescr>Privacy Protocol</fielddescr>
 			<fieldname>privacyprotocol</fieldname>
-			<description><![CDATA[The type of privacy protocol (encryption) to use.]]></description>
+			<description><![CDATA[The privacy protocol (encryption) to use. AES is more secure, but may not be supported by all clients.]]></description>
 			<type>select</type>
 			<default_value>AES</default_value>
 			<options>
@@ -139,7 +165,7 @@
 		<field>
 			<fielddescr>Passphrase</fielddescr>
 			<fieldname>passphrase</fieldname>
-			<description>Enter the privacy passphrase to use with the privacy protocol. Optional. If left blank, the password will be used.</description>
+			<description>Enter the privacy passphrase to use with the privacy protocol. Optional. If left blank, the password will be used. Must be at least 8 characters.</description>
 			<type>password</type>
 			<required/>
 			<size>20</size>
@@ -147,7 +173,7 @@
 		<field>
 			<fielddescr>Security Model</fielddescr>
 			<fieldname>secmodel</fieldname>
-			<description><![CDATA[The security model for this user.]]></description>
+			<description><![CDATA[The security model for this user. With user authentication, choose USM. For D/TLS, use TSM.]]></description>
 			<type>select</type>
 			<default_value>usm</default_value>
 			<options>
@@ -195,6 +221,21 @@
 			<name>SNMPv3 Certificate Mapping Information</name>
 			<type>listtopic</type>
 		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				SNMPv3 Certificate Mapping entries define a relationship between client certificates and SNMP users.
+				<div class="infoblock">
+					These entries do not define general characteristics, but specific mappings.
+					A certificate is identified uniquely by its fingerprint,
+					and the field paramter tells snmpd what part of the certificate contains the username to match.
+				</div>
+				]]>
+			</description>
+			<type>info</type>
+		</field>
+
 		<field>
 			<fielddescr>Priority</fielddescr>
 			<fieldname>priority</fieldname>

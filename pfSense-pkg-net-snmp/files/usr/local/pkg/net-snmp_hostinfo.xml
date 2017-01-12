@@ -50,6 +50,10 @@
 			<text>Trap Generation</text>
 			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
 		</tab>
+		<tab>
+			<text>[SNMP Trap Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmptrapd.xml</url>
+		</tab>
 	</tabs>
 	<fields>
 		<field>
@@ -118,7 +122,15 @@
 		<field>
 			<fielddescr>Disk Usage Warning</fielddescr>
 			<fieldname>disk_usage_percent</fieldname>
-			<description><![CDATA[The percentage of free space remaining before setting dskErrorFlag=1. Traps are not generated for disk usage. (optional, default: 20)]]></description>
+			<description>
+				<![CDATA[
+				The percentage of free space remaining before setting dskErrorFlag=1.
+				Traps are not generated for disk usage. (optional, default: 20)
+				<div class="infoblock">
+					All detected disks except for /dev and its clones will be monitored by snmpd.
+				</div>
+				]]>
+			</description>
 			<type>input</type>
 			<size>40</size>
 			<default_value>20</default_value>
@@ -129,11 +141,12 @@
 			<type>listtopic</type>
 		</field>
 		<field>
-			<fielddescr>Load Monitoring Requirements</fielddescr>
+			<fielddescr></fielddescr>
 			<description>
 				<![CDATA[
 				These fields configure Load Average monitoring in snmpd.
 				When the load average is above the value configured for any interval, laErrorFlag is set to 1.
+				<br/></br>
 				Traps are not generated for load average.
 				When all fields are blank, Load Average Monitoring is disabled.
 				To set a 5 minute value, the 1 minute value must also be set.
@@ -170,7 +183,25 @@
 			<name>Extended Commands</name>
 			<type>listtopic</type>
 		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				Extended Command entries allow custom user-defined programs to be executed by SNMP clients.
+				This behavior is useful, but insecure and can potentially leak information.
+				We recommend only using Extended Commands with SNMPv3 authorized users and transport encryption.
+				<div class="infoblock">
+					To access the output from clients, use the references found under nsExtendOutput1. For output with each line as a spearate OID, use nsExtendOutput2.
 
+					<pre>snmpwalk -v 3 -l authPriv -a SHA -A 1234567890 -u myuser -x AES -X 1234567890 localhost nsExtendOutput1</pre>
+
+					To retrieve the output individually, use the configured extend Name as part of the OID:
+					<pre>snmpget -v 3 -l authPriv -a SHA -A 1234567890 -u myuser -x AES -X 1234567890 localhost nsExtendOutputFull.\"ls\"</pre>
+				</div>
+				]]>
+			</description>
+			<type>info</type>
+		</field>
 		<field>
 			<fielddescr>Extended Commands</fielddescr>
 			<fieldname>none</fieldname>

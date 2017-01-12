@@ -5,7 +5,7 @@
 	<copyright>
 	<![CDATA[
 /*
- * net-snmptrapd.xml
+ * net-snmptrapd_forwards.xml
  *
  * part of pfSense (https://www.pfsense.org)
  * Copyright (c) 2017 Rubicon Communications, LLC (Netgate)
@@ -25,7 +25,7 @@
  */
 	]]>
 	</copyright>
-	<name>netsnmptrapdtraphandles</name>
+	<name>netsnmptrapdforwards</name>
 	<title>NET-SNMP Trap Daemon</title>
 	<include_file>/usr/local/pkg/net-snmp.inc</include_file>
 	<tabs>
@@ -48,27 +48,23 @@
 		<tab>
 			<text>Trap Handles</text>
 			<url>/pkg.php?xml=net-snmptrapd_traphandles.xml</url>
-			<active/>
 		</tab>
 		<tab>
 			<text>Trap Forwards</text>
 			<url>/pkg.php?xml=net-snmptrapd_forwards.xml</url>
+			<active/>
 		</tab>
 		<tab>
 			<text>[SNMP Daemon]</text>
 			<url>/pkg_edit.php?xml=net-snmp.xml</url>
 		</tab>
 	</tabs>
-	<delete_string>snmptrapd trap handle deleted</delete_string>
-	<addedit_string>snmptrapd trap handle created/modified</addedit_string>
+	<delete_string>snmptrapd forward deleted</delete_string>
+	<addedit_string>snmptrapd forward created/modified</addedit_string>
 	<adddeleteeditpagefields>
 		<columnitem>
 			<fielddescr>Destination</fielddescr>
 			<fieldname>destination</fieldname>
-		</columnitem>
-		<columnitem>
-			<fielddescr>Program</fielddescr>
-			<fieldname>program</fieldname>
 		</columnitem>
 		<columnitem>
 			<fielddescr>Description</fielddescr>
@@ -77,47 +73,76 @@
 	</adddeleteeditpagefields>
 	<fields>
 		<field>
-			<name>Trap Handle Configuration</name>
+			<name>Forwarding Host Configuration</name>
 			<type>listtopic</type>
 		</field>
 		<field>
 			<fielddescr></fielddescr>
 			<description>
 				<![CDATA[
-				Trap Handle entries define programs or scripts to execute when a trap is received by snmptrapd from a user or community authorization source with the "execute" Process Type selected.
-				<br/><br/>Details from the incoming trap are passed via standard input, with metadata in the environment such as the hostname and how the trap arrived.
-				For more information about data available to trap handles, consult
-				<a href="https://www.freebsd.org/cgi/man.cgi?query=snmptrapd.conf&sektion=5&apropos=0&manpath=FreeBSD+11.0-RELEASE+and+Ports#NOTIFICATION_PROCESSING">the snmptrapd.conf manual page</a>.
+				Forwarding Host entries destinations for traps received by the daemon from a user or community authorization source with the "net" Process Type selected.
 				]]>
 			</description>
 			<type>info</type>
 		</field>
-
 		<field>
 			<fielddescr>Destination</fielddescr>
 			<fieldname>destination</fieldname>
-			<description><![CDATA[Trap Handle destination OID, or "default"]]></description>
+			<description><![CDATA[Trap destination OID, or "default"]]></description>
 			<type>input</type>
 			<size>40</size>
 		</field>
 		<field>
-			<fielddescr>Program</fielddescr>
-			<fieldname>program</fieldname>
-			<description><![CDATA[<b>Full path</b> to the Trap Handle program or script]]></description>
-			<type>input</type>
-			<size>40</size>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				The Forward Host below defines the transport, host, and port that snmptrapd will use to relay traps to another trap receiver.
+				]]>
+			</description>
+			<type>info</type>
 		</field>
 		<field>
-			<fielddescr>Arguments</fielddescr>
-			<fieldname>args</fieldname>
-			<description><![CDATA[Trap Handle program arguments]]></description>
-			<type>input</type>
-			<size>40</size>
+			<fielddescr>Forward Host</fielddescr>
+			<fieldname>none</fieldname>
+			<type>rowhelper</type>
+			<rowhelper>
+				<rowhelperfield>
+					<fielddescr>Transport Type</fielddescr>
+					<fieldname>transport</fieldname>
+					<description><![CDATA[The protocol used by this forward.]]></description>
+					<type>select</type>
+					<default_value>udp</default_value>
+					<options>
+						<option><name>UDP</name><value>udp</value></option>
+						<option><name>UDP6</name><value>udp6</value></option>
+						<option><name>TCP</name><value>tcp</value></option>
+						<option><name>TCP6</name><value>tcp6</value></option>
+						<option><name>DTLS/UDP</name><value>dtlsudp</value></option>
+					</options>
+					<width>2</width>
+				</rowhelperfield>
+				<rowhelperfield>
+					<fielddescr>IP Address/Hostname</fielddescr>
+					<fieldname>ipaddress</fieldname>
+					<description><![CDATA[IP address or hostname to forward.]]></description>
+					<type>input</type>
+					<width>2</width>
+				</rowhelperfield>
+				<rowhelperfield>
+					<fielddescr>Port</fielddescr>
+					<fieldname>snmpport</fieldname>
+					<description><![CDATA[The forwarding port (default: 161).]]></description>
+					<type>input</type>
+					<width>1</width>
+					<default_value>161</default_value>
+					<required/>
+				</rowhelperfield>
+			</rowhelper>
 		</field>
 		<field>
 			<fielddescr>Description</fielddescr>
 			<fieldname>description</fieldname>
-			<description><![CDATA[A description of this entry]]></description>
+			<description><![CDATA[A description of this entry.]]></description>
 			<type>input</type>
 			<size>20</size>
 		</field>

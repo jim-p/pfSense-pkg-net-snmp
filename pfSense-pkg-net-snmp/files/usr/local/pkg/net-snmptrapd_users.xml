@@ -34,11 +34,11 @@
 			<url>/pkg_edit.php?xml=net-snmptrapd.xml</url>
 		</tab>
 		<tab>
-			<text>Community Authorization</text>
+			<text>Community Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_communities.xml</url>
 		</tab>
 		<tab>
-			<text>User Authorization</text>
+			<text>User Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_users.xml</url>
 			<active/>
 		</tab>
@@ -50,6 +50,14 @@
 			<text>Trap Handles</text>
 			<url>/pkg.php?xml=net-snmptrapd_traphandles.xml</url>
 		</tab>
+		<tab>
+			<text>Trap Forwards</text>
+			<url>/pkg.php?xml=net-snmptrapd_forwards.xml</url>
+		</tab>
+		<tab>
+			<text>[SNMP Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmp.xml</url>
+		</tab>
 	</tabs>
 	<delete_string>snmptrapd user auth entry deleted</delete_string>
 	<addedit_string>snmptrapd user auth entry created/modified</addedit_string>
@@ -58,13 +66,30 @@
 			<fielddescr>Username</fielddescr>
 			<fieldname>username</fieldname>
 		</columnitem>
+		<columnitem>
+			<fielddescr>Process Type</fielddescr>
+			<fieldname>type</fieldname>
+		</columnitem>
+		<columnitem>
+			<fielddescr>Description</fielddescr>
+			<fieldname>description</fieldname>
+		</columnitem>
 	</adddeleteeditpagefields>
 	<fields>
 		<field>
-			<name>SNMP Trap Daemon Configuration</name>
+			<name>User Authorization Configuration</name>
 			<type>listtopic</type>
 		</field>
-<!-- authUser log [-s MODEL] USER [LEVEL [OID]] -->
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				User Authorization defines SNMPv3 users which are allowed to send traps to this daemon and what actions the daemon will allow.
+				Restrictions may also be placed on the user to limit how it can connect and what part of the OID tree it is allowed to work with.
+				]]>
+			</description>
+			<type>info</type>
+		</field>
 		<field>
 			<fielddescr>Trap User</fielddescr>
 			<fieldname>username</fieldname>
@@ -73,6 +98,26 @@
 			<source><![CDATA[netsnmp_get_usernames()]]></source>
 			<source_name>descr</source_name>
 			<source_value>refid</source_value>
+		</field>
+		<field>
+			<fielddescr>Description</fielddescr>
+			<fieldname>description</fieldname>
+			<description><![CDATA[A description of this entry.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
+			<fielddescr>Process Type</fielddescr>
+			<fieldname>type</fieldname>
+			<description><![CDATA[Type of events to process using this entry. If no types are slected, all types will be used.]]></description>
+			<type>select</type>
+			<multiple/>
+			<options>
+				<option><name>Log Trap Event (log)</name><value>log</value></option>
+				<option><name>Forward Trap to another Host (net)</name><value>net</value></option>
+				<option><name>Execute a Trap Handle (execute)</name><value>execute</value></option>
+			</options>
+			<size>3</size>
 		</field>
 		<field>
 			<fielddescr>Security Model</fielddescr>

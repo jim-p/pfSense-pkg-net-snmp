@@ -35,11 +35,11 @@
 			<active/>
 		</tab>
 		<tab>
-			<text>Community Authorization</text>
+			<text>Community Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_communities.xml</url>
 		</tab>
 		<tab>
-			<text>User Authorization</text>
+			<text>User Auth</text>
 			<url>/pkg.php?xml=net-snmptrapd_users.xml</url>
 		</tab>
 		<tab>
@@ -50,12 +50,30 @@
 			<text>Trap Handles</text>
 			<url>/pkg.php?xml=net-snmptrapd_traphandles.xml</url>
 		</tab>
+		<tab>
+			<text>Trap Forwards</text>
+			<url>/pkg.php?xml=net-snmptrapd_forwards.xml</url>
+		</tab>
+		<tab>
+			<text>[SNMP Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmp.xml</url>
+		</tab>
 	</tabs>
 	<advanced_options>enabled</advanced_options>
 	<fields>
 		<field>
 			<name>SNMP Trap Daemon Configuration</name>
 			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				The SNMP Trap Daemon, snmptrapd, receives SNMP Trap notifications of various types from SNMP daemons on other hosts.
+				It can also act on these traps by logging, executing a program, or forwarding the traps to another daemon.
+				]]>
+			</description>
+			<type>info</type>
 		</field>
 		<field>
 			<fielddescr>Enable snmptrapd</fielddescr>
@@ -86,7 +104,7 @@
 				<rowhelperfield>
 					<fielddescr>IP Address/Hostname</fielddescr>
 					<fieldname>ipaddress</fieldname>
-					<description><![CDATA[IP address or hostname to bind. Leave blank to bind UDP on all interfaces. For DTLS, this must be a hostname.]]></description>
+					<description><![CDATA[IP address or hostname to bind. Leave blank to bind UDP on all interfaces. For DTLS, this must be a hostname (or blank).]]></description>
 					<type>input</type>
 					<width>2</width>
 				</rowhelperfield>
@@ -100,6 +118,15 @@
 					<required/>
 				</rowhelperfield>
 			</rowhelper>
+		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				The interface binding controls the protocols, addresses, and ports which snmptrapd will use to receive incoming traps from other hosts.
+				]]>
+			</description>
+			<type>info</type>
 		</field>
 
 		<field>

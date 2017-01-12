@@ -68,10 +68,32 @@
 			<text>Trap Generation</text>
 			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
 		</tab>
+		<tab>
+			<text>[SNMP Trap Daemon]</text>
+			<url>/pkg_edit.php?xml=net-snmptrapd.xml</url>
+		</tab>
 	</tabs>
 	<advanced_options>enabled</advanced_options>
 	<fields>
-
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				The NET-SNMP Daemon responds to Simple Network Management Protocol (SNMP) requests from SNMP clients.
+				This daemon supports SNMPv1, SNMPv2c, and SNMPv3 with user authorization and transport security.
+				<br/><br/>
+				To get started, configure the settings on this tab and the Host Information tab, then define Communities
+				and/or Users to control who is allowed to send incoming requests.
+				<div class="infoblock">
+				SNMP information is organized hierarchically in a tree, with each node being an Object Identifier (OID).
+				Management Information Base (MIB) files define groups of information and named mappings for OIDs.
+				Clients query a specific OID and can get a single result or they can "walk" the tree for multiple
+				nested results.
+				</div>
+				]]>
+			</description>
+			<type>info</type>
+		</field>
 		<field>
 			<fielddescr>Enable snmpd</fielddescr>
 			<fieldname>enable_snmpd</fieldname>
@@ -117,6 +139,22 @@
 				</rowhelperfield>
 			</rowhelper>
 		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				The Interface Binding controls define transports, addresses, and ports used to listen for SNMP client requests.
+				Leave the IP Address/Hostname field blank to bind to all addresses with the chosen transport and port.
+				The port number defaults to 161 when left blank.
+				<div class="infoblock">
+					UDP and TCP can accept either a hostname or IPv4 address.
+					UDP6 and TCP6 can accept either a hostname or IPv6 address.
+					An address entry for DTLS or TLS must be a hostname, not an IP address.
+				</div>
+				]]>
+			</description>
+			<type>info</type>
+		</field>
 
 		<field>
 			<name>Identification</name>
@@ -139,15 +177,16 @@
 		<field>
 			<fielddescr>Engine ID</fielddescr>
 			<fieldname>engineid</fieldname>
-			<description><![CDATA[SNMP Engine ID string to use in combination with the above option (optional)]]></description>
+			<description><![CDATA[SNMP Engine ID string to use when Engine ID Type is set to String (optional)]]></description>
 			<type>input</type>
 			<size>20</size>
 		</field>
 		<field>
 			<fielddescr>CA Certificate</fielddescr>
 			<fieldname>ca_cert</fieldname>
-			<description><![CDATA[Choose the SSL CA Certficate for use with DTLS.<br>
-					Choose "None" if DTLS will not be used. Choose "self" for a self-signed certificate. (Default: none)]]></description>
+			<description><![CDATA[The SSL Certficate Authority for use with DTLS.<br>
+					Choose "Self-Signed Certificate" when using a self-signed server certificate.
+					Choose "None" if DTLS will not be used. (Default: none)]]></description>
 			<type>select_source</type>
 			<source><![CDATA[netsnmp_get_ca_certs()]]></source>
 			<source_name>descr</source_name>
@@ -156,7 +195,7 @@
 		<field>
 			<fielddescr>Server Certificate</fielddescr>
 			<fieldname>server_cert</fieldname>
-			<description><![CDATA[Choose the SSL Server Certficate for use with DTLS.<br>
+			<description><![CDATA[The SSL Server Certficate for use with DTLS.<br>
 					Choose "None" if DTLS will not be used. (Default: none)]]></description>
 			<type>select_source</type>
 			<source><![CDATA[netsnmp_get_server_certs()]]></source>

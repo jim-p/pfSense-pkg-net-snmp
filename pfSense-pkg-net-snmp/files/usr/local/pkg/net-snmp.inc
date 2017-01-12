@@ -260,7 +260,7 @@ function netsnmp_resync() {
 				$snmpd_config .= "\n";
 			}
 			if (($user['snmpv3_type'] == "cert") || ($user['snmpv3_type'] == "both")) {
-				/* Defines a mapping of a certificate parameter to an SNMPv3 username (defined previously) 
+				/* Defines a mapping of a certificate parameter to an SNMPv3 username (defined previously)
 				   This requires the fingerprint of the certificate in order to identify it specifically,
 				   and then the option defines which cert field to use, or a manual override to map to a
 				   specific user directly.
@@ -279,6 +279,7 @@ function netsnmp_resync() {
 
 		/* Don't bother to write the users config if there are no users */
 		if (!empty($snmpd_users_config)) {
+			/* Write the createUser configuration file */
 			file_put_contents($snmpd_users_file, $snmpd_users_config);
 		}
 	}
@@ -337,6 +338,7 @@ function netsnmp_resync() {
 		$snmpd_config .= "v1trapaddress {$ntgsettings['v1trapaddress']}\n";
 	}
 
+	/* Support up to three SNMPv1 Trap Sinks */
 	if (!empty($ntgsettings['trapsink1_host'])) {
 		$snmpd_config .= "trapsink {$ntgsettings['trapsink1_host']}";
 		if (!empty($ntgsettings['trapsink1_community'])) {
@@ -368,6 +370,7 @@ function netsnmp_resync() {
 		$snmpd_config .= "\n";
 	}
 
+	/* Support up to three SNMPv2c/3 Trap Sinks */
 	if (!empty($ntgsettings['trap2sink1_host'])) {
 		$snmpd_config .= "trap2sink {$ntgsettings['trap2sink1_host']}";
 		if (!empty($ntgsettings['trap2sink1_community'])) {
@@ -399,6 +402,7 @@ function netsnmp_resync() {
 		$snmpd_config .= "\n";
 	}
 
+	/* Support up to three SNMPv2c/3 Inform notification hosts */
 	if (!empty($ntgsettings['informsink1_host'])) {
 		$snmpd_config .= "informsink {$ntgsettings['informsink1_host']}";
 		if (!empty($ntgsettings['informsink1_community'])) {
@@ -430,6 +434,7 @@ function netsnmp_resync() {
 		$snmpd_config .= "\n";
 	}
 
+	/* 'monitor' entries define conditions to trigger traps. The control is a rowhelper, so loop through its entries. */
 	if (is_array($ntgsettings['row'])) {
 		foreach ($ntgsettings['row'] as $monitor) {
 			if (empty($monitor['monitor_name'])) {
@@ -443,15 +448,21 @@ function netsnmp_resync() {
 		}
 	}
 
+	/* Running snmptrapd requires snmpd to run as an agentx master */
 	$snmpd_config .= "master agentx\n";
+
+	/* Write the configuration file */
 	file_put_contents($snmpd_config_file, $snmpd_config);
 
+	/* When stopping the daemon, use the PID file to locate and kill the process */
 	$rc_file_stop = <<<EOF
 if [ -e /var/run/net_snmpd.pid ]; then
 	/bin/kill -9 `/bin/cat /var/run/net_snmpd.pid`
 	/bin/rm -f /var/run/net_snmpd.pid
 fi
 EOF;
+
+	/* When starting the daemon, reap any leftover processes and then start */
 	$rc_file_start = <<<EOF
 # Ensure no other copies of the daemons are running or it breaks.
 /usr/bin/killall -9 snmpd 2>/dev/null
@@ -469,14 +480,17 @@ EOF;
 			"stop" =>  $rc_file_stop
 		)
 	);
+
+	/* Restart the service with the new configuration. */
 	restart_service('net-snmpd');
 }
 
-/* Write snmptrapd config file */
+/* Write snmptrapd config file and (re)start the daemon */
 function netsnmp_resync_snmptrapd() {
 	global $config, $snmptrapd_config_file;
 	$nsettings = &$config['installedpackages']['netsnmptrapd']['config'][0];
 
+	/* If snmptrapd is not enabled, then stop the service and do not write the config */
 	if ($nsettings['enable_snmptrapd'] != "on") {
 		stop_service('net-snmptrapd');
 		return;
@@ -484,24 +498,31 @@ function netsnmp_resync_snmptrapd() {
 
 	$snmptrapd_config = "";
 
+	/* The protocol and interface binding for snmptrapd works the same as snmpd */
 	$agentaddresses = array();
 	if (is_array($nsettings['row'])) {
 		foreach ($nsettings['row'] as $agent) {
 			$aa = "";
+			/* At a minimum, a port must be supplied. UDP is assumed in that case */
 			if (!empty($agent['snmpport'])) {
 				$aa = $agent['snmpport'];
 			}
+			/* An address or hostname is optional but needs to be before the port */
 			if (!empty($agent['ipaddress'])) {
 				$aa = "{$agent['ipaddress']}:{$aa}";
 			}
+			/* Transport is optional (UDP is assumed) */
 			if (!empty($agent['transport'])) {
 				$aa = "{$agent['transport']}:{$aa}";
 			}
+			/* Only keep this entry if it contains data */
 			if (!empty($aa)) {
 				$agentaddresses[] = $aa;
 			}
 		}
 	}
+
+	/* Agent address list is comma-separated, no spaces: a:b:c,d:e:f,g:h:i */
 	if (!empty($agentaddresses)) {
 		$snmptrapd_config .= "agentaddress " . implode(',', $agentaddresses) . "\n";
 	}
@@ -522,14 +543,23 @@ function netsnmp_resync_snmptrapd() {
 		$snmptrapd_config .= "disableAuthorization {$nsettings['disableauthorization']}\n";
 	}
 
-
+	/* Community-based Authentication for receiving traps */
 	$ncsettings = &$config['installedpackages']['netsnmptrapdcommunities']['config'];
 	if (is_array($ncsettings)) {
 		foreach ($ncsettings as $community) {
-			$snmptrapd_config .= "authCommunity log " .
+			/* If no type is specified, assume all types. */
+			if (empty($community['type'])) {
+				$community['type'] = "log,net,execute";
+			}
+
+			$snmptrapd_config .= "authCommunity {$community['type']} " .
 						"\"{$community['authcommunity']}\"";
+
+			/* Source restrictions are optional */
 			if (!empty($community['source'])) {
 				$snmptrapd_config .= " {$community['source']}";
+
+				/* A base OID restriction is optional and can only be set when a source is also defined. */
 				if (!empty($community['baseoid'])) {
 					$snmptrapd_config .= " {$community['baseoid']}";
 				}
@@ -538,22 +568,33 @@ function netsnmp_resync_snmptrapd() {
 		}
 	}
 
+	/* User-based Authentication for receiving traps */
 	$nusettings = &$config['installedpackages']['netsnmptrapdusers']['config'];
 	if (is_array($nusettings)) {
-		foreach ($nusettings as $community) {
-			$snmptrapd_config .= "authUser log " .
-					 "-s {$community['secmodel']} " .
-					 "\"{$community['username']}\"";
-			if ($community['level'] != "none") {
-				$snmptrapd_config .= " {$community['level']}";
-				if (!empty($community['baseoid'])) {
-					$snmptrapd_config .= " {$community['baseoid']}";
+		foreach ($nusettings as $user) {
+			/* If no type is specified, assume all types. */
+			if (empty($user['type'])) {
+				$user['type'] = "log,net,execute";
+			}
+
+			$snmptrapd_config .= "authUser {$user['type']} " .
+					 "-s {$user['secmodel']} " .
+					 "\"{$user['username']}\"";
+
+			/* Security level restrictions are optional */
+			if ($user['level'] != "none") {
+				$snmptrapd_config .= " {$user['level']}";
+
+				/* A base OID restriction is optional and can only be set when a security level is also defined. */
+				if (!empty($user['baseoid'])) {
+					$snmptrapd_config .= " {$user['baseoid']}";
 				}
 			}
 			$snmptrapd_config .= "\n";
 		}
 	}
 
+	/* Trap Format tab */
 	$nfsettings = &$config['installedpackages']['netsnmptrapdformats']['config'][0];
 
 	if (!empty($nsettings['format1'])) {
@@ -564,6 +605,8 @@ function netsnmp_resync_snmptrapd() {
 		$snmptrapd_config .= "format2 {$nsettings['format2']}\n";
 	}
 
+	/* These formats are in a rowhelper to make the page less cluttered,
+	   but there should only be one of each "destination" defined. */
 	if (is_array($nsettings['row'])) {
 		foreach ($nsettings['row'] as $format) {
 			if (empty($format['destination'])) {
@@ -574,7 +617,10 @@ function netsnmp_resync_snmptrapd() {
 		}
 	}
 
+	/* Trap Handles tab */
 	$ntsettings = &$config['installedpackages']['netsnmptrapdtraphandles']['config'];
+
+	/* Nothing fancy. Executes programs when a trap arrives, not much validation we can do. */
 	if (is_array($ntsettings)) {
 		foreach ($ntsettings as $traphandle) {
 			$snmptrapd_config .= "traphandle {$traphandle['destination']} " .
@@ -583,6 +629,41 @@ function netsnmp_resync_snmptrapd() {
 		}
 	}
 
+	/* Forwarding of traps to other hosts */
+	$nwsettings = &$config['installedpackages']['netsnmptrapdforwards']['config'];
+	if (is_array($nwsettings)) {
+		foreach ($nwsettings as $forward) {
+			/* The forwarding addresses control where and how snmptrapd will deliver traps to another daemon. */
+			$agentaddresses = array();
+			if (is_array($forward['row'])) {
+				foreach ($forward['row'] as $agent) {
+					$aa = "";
+					/* At a minimum, a port must be supplied. UDP is assumed in that case */
+					if (!empty($agent['snmpport'])) {
+						$aa = $agent['snmpport'];
+					}
+					/* An address or hostname is optional but needs to be before the port */
+					if (!empty($agent['ipaddress'])) {
+						$aa = "{$agent['ipaddress']}:{$aa}";
+					}
+					/* Transport is optional (UDP is assumed) */
+					if (!empty($agent['transport'])) {
+						$aa = "{$agent['transport']}:{$aa}";
+					}
+					/* Only keep this entry if it contains data */
+					if (!empty($aa)) {
+						$agentaddresses[] = $aa;
+					}
+				}
+			}
+
+			/* Only write the forward entry if there is a valid destination. */
+			if (!empty($agentaddresses)) {
+				/* Agent address list is comma-separated, no spaces: a:b:c,d:e:f,g:h:i */
+				$snmptrapd_config .= "forward {$forward['destination']} " . implode(',', $agentaddresses) . "\n";
+			}
+		}
+	}
 	/* Dump custom options into the configuration as-is */
 	if (!empty($nsettings['custom_options'])) {
 		$snmptrapd_config .= "{$nsettings['custom_options']}\n";
@@ -590,12 +671,14 @@ function netsnmp_resync_snmptrapd() {
 
 	file_put_contents($snmptrapd_config_file, $snmptrapd_config);
 
+	/* When stopping the daemon, use the PID file to locate and kill the process */
 	$rc_file_stop = <<<EOF
 if [ -e /var/run/snmptrapd.pid ]; then
 	/bin/kill -9 `/bin/cat /var/run/snmptrapd.pid`
 	/bin/rm -f /var/run/snmptrapd.pid
 fi
 EOF;
+	/* When starting the daemon, reap any leftover processes and then start */
 	$rc_file_start = <<<EOF
 # Ensure no other copies of the daemons are running or it breaks.
 /usr/bin/killall -9 snmptrapd 2>/dev/null
@@ -613,5 +696,6 @@ EOF;
 		)
 	);
 
+	/* Restart the service with the new configuration. */
 	restart_service('net-snmptrapd');
 }
