@@ -736,7 +736,6 @@ function netsnmp_validate_general($post, &$input_errors) {
 	} else {
 		$settings = array();
 	}
-	// $input_errors[] = gettext("");
 	/* Interface binding:
 		D/TLS blank or hostname.
 		UDP/TCP blank, hostname, IPv4 addr
@@ -809,10 +808,51 @@ function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
 	}
 	// $input_errors[] = gettext("");
 	/* interface fadeout: blank or numeric, positive */
+	if (!is_numericint($post['interface_fadeout'])) {
+		$input_errors[] = gettext("Interface Fadeout must be an integer greater than 0.");
+	}
 	/* disk usage warning: blank or percentage (>0, <=100) */
+	if (!empty($post['disk_usage_percent']) &&
+	    (!is_numericint($post['disk_usage_percent']) || ($post['disk_usage_percent'] < 0) || ($post['disk_usage_percent'] > 100))) {
+		$input_errors[] = gettext("Disk Usage Warning must be a percentage between 0 and 100, or left blank.");
+	}
 	/* load 1/5/15: blank or numeric, positive */
-	/* extend: type: extend, extendfix */
-	/* extend: program: check if file exists/is executable */
+	if (!empty($post['load_1']) && !is_numericint($post['load_1'])) {
+		$input_errors[] = gettext("The supplied 1-minute load average is invalid.");
+	}
+	if (!empty($post['load_5']) && !is_numericint($post['load_5'])) {
+		$input_errors[] = gettext("The supplied 5-minute load average is invalid.");
+	}
+	if (!empty($post['load_15']) && !is_numericint($post['load_15'])) {
+		$input_errors[] = gettext("The supplied 15-minute load average is invalid.");
+	}
+
+	/* Load average sanity check [ 1 [ 5 [ 15 ] ] ] */
+	if (!empty($post['load_5']) && empty($post['load_1'])) {
+		$input_errors[] = gettext("A 1-minute threshold is required when a 5-minute threshold is set.");
+	}
+	if (!empty($post['load_15']) && empty($post['load_1'])) {
+		$input_errors[] = gettext("A 1-minute threshold is required when a 15-minute threshold is set.");
+	}
+	if (!empty($post['load_15']) && empty($post['load_5'])) {
+		$input_errors[] = gettext("A 5-minute threshold is required when a 15-minute threshold is set.");
+	}
+
+	/* extend rowhelper validation */
+	$i = 0;
+	$used_ports = array();
+	while (isset($post['ext_type' . $i])) {
+		/* extend: type: extend, extendfix */
+		if (!in_array($post['ext_type' . $i], array('extend', 'extendfix'))) {
+			$input_errors[] = gettext("Invalid extended command type.");
+		}
+		/* extend: ext_prog: check if file exists/is executable */
+		if (!empty($post['ext_prog' . $i]) &&
+		    (!file_exists($post['ext_prog' . $i]) || !is_executable($post['ext_prog' . $i]))) {
+			$input_errors[] = gettext("The supplied command does not exist or is not executable.");
+		}
+		$i++;
+	}
 }
 
 /* snmpd - Users tab */
