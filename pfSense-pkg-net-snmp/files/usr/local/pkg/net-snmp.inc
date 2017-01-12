@@ -737,6 +737,12 @@ function netsnmp_validate_general($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* Interface binding:
+		D/TLS blank or hostname.
+		UDP/TCP blank, hostname, IPv4 addr
+		UDP6/TCP6 blank, hostname, IPv6 addr
+		 */
+	/* Rate limits: integers, -1 and up. */
 }
 /* snmpd - Host Information tab */
 function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
@@ -748,6 +754,11 @@ function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* interface fadeout: blank or numeric, positive */
+	/* disk usage warning: blank or percentage (>0, <=100) */
+	/* load 1/5/15: blank or numeric, positive */
+	/* extend: type: extend, extendfix */
+	/* extend: program: check if file exists/is executable */
 }
 
 /* snmpd - Users tab */
@@ -760,6 +771,15 @@ function netsnmp_validate_netsnmpusers($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* auth type: SHA or MD5 */
+	/* password: >=8 chars, no "? */
+	/* privacy protocol: AES, DES, none */
+	/* passphrase: >=8 chars, no "? */
+	/* sec model: usm, tsm */
+	/* rorwuser: rouser, rwuser */
+	/* minseclev: priv, auth, noauth, none */
+	/* priority: int, positive */
+	/* options: cn, sn, rfc822, dns, ip, any */
 }
 
 /* snmpd - Communities tab */
@@ -772,6 +792,9 @@ function netsnmp_validate_netsnmpcommunities($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* rorwcommunity: rocommunity, rwcommunity */
+	/* commtype: IPv4, IPv6, both */
+	/* source restriction: 'default', IPv4 addr or subnet if commtype=IPv4, IPv6 addr or subnet if commtype = IPv6*/
 }
 
 /* snmpd - Trap Generation tab*/
@@ -784,6 +807,32 @@ function netsnmp_validate_netsnmptrapgen($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* authtrapenable: 1, 2 */
+	/* linkupdownnotifications: yes, no */
+	/* defaultmonitors: yes, no */
+	/* iquerySecName: valid user */
+	/* v1trapaddress: blank, ip address */
+
+	/* trapsink1_host: blank, ip address, hostname */
+	/* trapsink1_port: blank, port number */
+	/* trapsink2_host: blank, ip address, hostname */
+	/* trapsink2_port: blank, port number */
+	/* trapsink3_host: blank, ip address, hostname */
+	/* trapsink3_port: blank, port number */
+
+	/* trap2sink1_host: blank, ip address, hostname */
+	/* trap2sink1_port: blank, port number */
+	/* trap2sink2_host: blank, ip address, hostname */
+	/* trap2sink2_port: blank, port number */
+	/* trap2sink3_host: blank, ip address, hostname */
+	/* trap2sink3_port: blank, port number */
+
+	/* informsink1_host: blank, ip address, hostname */
+	/* informsink1_port: blank, port number */
+	/* informsink2_host: blank, ip address, hostname */
+	/* informsink2_port: blank, port number */
+	/* informsink3_host: blank, ip address, hostname */
+	/* informsink3_port: blank, port number */
 }
 
 
@@ -797,6 +846,15 @@ function netsnmp_validate_netsnmptrapd($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* Interface binding:
+		D/TLS blank or hostname.
+		UDP/TCP blank, hostname, IPv4 addr
+		UDP6/TCP6 blank, hostname, IPv6 addr
+		 */
+	/* donotretainnotificationlogs: yes, no */
+	/* donotlogtraps: yes, no */
+	/* ignoreauthfailure: yes, no */
+	/* disableauthorization: yes, no */
 }
 
 /* snmptrapd - Community Auth tab*/
@@ -809,6 +867,8 @@ function netsnmp_validate_netsnmptrapdcommunities($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* type: log, net, execute */
+	/* source restriction: 'default', IPv4 addr or subnet, IPv6 addr or subnet */
 }
 
 /* snmptrapd - User Auth tab*/
@@ -821,19 +881,10 @@ function netsnmp_validate_netsnmptrapdusers($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
-}
-
-/* snmptrapd - Trap Format tab */
-function netsnmp_validate_netsnmptrapdformats($post, &$input_errors) {
-	global $config;
-
-	if (is_array($config['installedpackages']['netsnmptrapdformats'])) {
-		$settings = $config['installedpackages']['netsnmptrapdformats']['config'][0];
-	} else {
-		$settings = array();
-	}
-	$nfsettings = &$config['installedpackages']['netsnmptrapdformats']['config'][0];
-	// $input_errors[] = gettext();
+	/* username: valid user */
+	/* type: log, net, execute */
+	/* secmodel: usm, tsm */
+	/* level: priv, auth, noauth, none */
 }
 
 /* snmptrapd - Trap Handles tab */
@@ -846,6 +897,7 @@ function netsnmp_validate_netsnmptrapdtraphandles($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext();
+	/* program: file exists, is executable */
 }
 
 /* snmptrapd - Forwarding of traps to other hosts */
@@ -859,4 +911,9 @@ function netsnmp_validate_netsnmptrapdforwards($post, &$input_errors) {
 	}
 	$nwsettings = &$config['installedpackages']['netsnmptrapdforwards']['config'];
 	// $input_errors[] = gettext();
+	/* Transport Type:
+		D/TLS blank or hostname.
+		UDP/TCP blank, hostname, IPv4 addr
+		UDP6/TCP6 blank, hostname, IPv6 addr
+		 */
 }
