@@ -751,7 +751,7 @@ function netsnmp_validate_general($post, &$input_errors) {
 			case "tcp":
 				if (!empty($post['ipaddress' . $i]) &&
 				    (!is_ipaddrv4($post['ipaddress' . $i]) && !is_hostname($post['ipaddress' . $i]))) {
-					$input_errors[] = sprintf(gettext("An IP Address/Hostname must be entered, or the field must be blank. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+					$input_errors[] = sprintf(gettext("An IPv4 Address/Hostname must be entered, or the field must be blank. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
 				}
 				$short_proto = $post['transport' . $i];
 				break;
@@ -759,7 +759,7 @@ function netsnmp_validate_general($post, &$input_errors) {
 			case "tcp6":
 				if (!empty($post['ipaddress' . $i]) &&
 				    (!is_ipaddrv6($post['ipaddress' . $i]) && !is_hostname($post['ipaddress' . $i]))) {
-					$input_errors[] = sprintf(gettext("An IP Address/Hostname must be entered, or the field must be blank. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+					$input_errors[] = sprintf(gettext("An IPv6 Address/Hostname must be entered, or the field must be blank. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
 				}
 				$short_proto = $post['transport' . $i];
 				break;
@@ -900,11 +900,55 @@ function netsnmp_validate_netsnmptrapd($post, &$input_errors) {
 		$settings = array();
 	}
 	// $input_errors[] = gettext("");
-	/* Interface binding:
-		D/TLS blank or hostname.
-		UDP/TCP blank, hostname, IPv4 addr
-		UDP6/TCP6 blank, hostname, IPv6 addr
-		 */
+
+	$i = 0;
+	$used_ports = array();
+	while (isset($post['transport' . $i])) {
+		$short_proto = "";
+		switch ($post['transport' . $i]) {
+			case "udp":
+			case "tcp":
+				if (!empty($post['ipaddress' . $i]) &&
+				    (!is_ipaddrv4($post['ipaddress' . $i]) && !is_hostname($post['ipaddress' . $i]))) {
+					$input_errors[] = sprintf(gettext("An IPv4 Address/Hostname must be entered, or the field must be blank. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+				}
+				$short_proto = $post['transport' . $i];
+				break;
+			case "udp6":
+			case "tcp6":
+				if (!empty($post['ipaddress' . $i]) &&
+				    (!is_ipaddrv6($post['ipaddress' . $i]) && !is_hostname($post['ipaddress' . $i]))) {
+					$input_errors[] = sprintf(gettext("An IPv6 Address/Hostname must be entered, or the field must be blank. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+				}
+				$short_proto = $post['transport' . $i];
+				break;
+			case "tlstcp":
+			case "dtlsudp":
+				if (!empty($post['ipaddress' . $i]) &&
+				    (!is_hostname($post['ipaddress' . $i]) || is_ipaddr($post['ipaddress' . $i]))) {
+					$input_errors[] = sprintf(gettext("TLS modes require a hostname, or the field must be blank. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+				}
+				$short_proto = substr($post['transport' . $i], -3, 3);
+				break;
+			default:
+				$input_errors[] = gettext("Invalid transport specified.");
+		}
+		if (empty($post['snmpport' . $i])) {
+			$post['snmpport' . $i] = '161';
+		}
+		if (!is_port($post['snmpport' . $i])) {
+			$input_errors[] = sprintf(gettext("Invalid port number specified (%s)."), htmlspecialchars($post['snmpport' . $i]));
+		} else {
+			$test_port = "{$short_proto}:{$post['snmpport' . $i]}";
+			if (in_array($test_port, $used_ports)) {
+				$input_errors[] = sprintf(gettext("This port and protocol combination is already in use. (%s)"), htmlspecialchars($test_port));
+			} else {
+				$used_ports[] = $test_port;
+			}
+		}
+		$i++;
+	}
+
 	/* donotretainnotificationlogs: yes, no */
 	/* donotlogtraps: yes, no */
 	/* ignoreauthfailure: yes, no */
@@ -966,8 +1010,50 @@ function netsnmp_validate_netsnmptrapdforwards($post, &$input_errors) {
 	$nwsettings = &$config['installedpackages']['netsnmptrapdforwards']['config'];
 	// $input_errors[] = gettext("");
 	/* Transport Type:
-		D/TLS blank or hostname.
-		UDP/TCP blank, hostname, IPv4 addr
-		UDP6/TCP6 blank, hostname, IPv6 addr
+		D/TLS hostname.
+		UDP/TCP hostname, IPv4 addr
+		UDP6/TCP6 hostname, IPv6 addr
 		 */
+
+	$i = 0;
+	$used_ports = array();
+	while (isset($post['transport' . $i])) {
+		$short_proto = "";
+		switch ($post['transport' . $i]) {
+			case "udp":
+			case "tcp":
+				if (empty($post['ipaddress' . $i]) ||
+				    (!is_ipaddrv4($post['ipaddress' . $i]) && !is_hostname($post['ipaddress' . $i]))) {
+					$input_errors[] = sprintf(gettext("An IPv4 Address/Hostname must be entered. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+				}
+				$short_proto = $post['transport' . $i];
+				break;
+			case "udp6":
+			case "tcp6":
+				if (empty($post['ipaddress' . $i]) ||
+				    (!is_ipaddrv6($post['ipaddress' . $i]) && !is_hostname($post['ipaddress' . $i]))) {
+					$input_errors[] = sprintf(gettext("An IPv6 Address/Hostname must be entered. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+				}
+				$short_proto = $post['transport' . $i];
+				break;
+			case "tlstcp":
+			case "dtlsudp":
+				if (empty($post['ipaddress' . $i]) ||
+				    (!is_hostname($post['ipaddress' . $i]) || is_ipaddr($post['ipaddress' . $i]))) {
+					$input_errors[] = sprintf(gettext("TLS modes require a hostname. (%s)"), htmlspecialchars($post['ipaddress' . $i]));
+				}
+				$short_proto = substr($post['transport' . $i], -3, 3);
+				break;
+			default:
+				$input_errors[] = gettext("Invalid transport specified.");
+		}
+		if (empty($post['snmpport' . $i])) {
+			$post['snmpport' . $i] = '161';
+		}
+		if (!is_port($post['snmpport' . $i])) {
+			$input_errors[] = sprintf(gettext("Invalid port number specified (%s)."), htmlspecialchars($post['snmpport' . $i]));
+		}
+		$i++;
+	}
+
 }
