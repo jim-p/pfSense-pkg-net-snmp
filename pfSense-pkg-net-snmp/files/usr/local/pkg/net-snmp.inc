@@ -34,8 +34,14 @@ $snmptrapd_config_file = "/var/etc/netsnmptrapd.conf";
 
 function netsnmp_install_command() {
 	global $config;
-	/* Make some default settings/entries/users */
+	/* Make some default settings/entries/users, if necessary */
 }
+
+/***************************************************************************
+ *
+ * Selection Source Functions
+ *
+ ***************************************************************************/
 
 /* Get a list of CA Certificates for use with trustCert */
 function netsnmp_get_ca_certs() {
@@ -80,6 +86,12 @@ function netsnmp_get_usernames() {
 	}
 	return $usernames;
 }
+
+/***************************************************************************
+ *
+ * Daemon Configuration for snmpd
+ *
+ ***************************************************************************/
 
 /* Write snmpd config file */
 function netsnmp_resync() {
@@ -485,6 +497,12 @@ EOF;
 	restart_service('net-snmpd');
 }
 
+/***************************************************************************
+ *
+ * Daemon Configuration for snmptrapd
+ *
+ ***************************************************************************/
+
 /* Write snmptrapd config file and (re)start the daemon */
 function netsnmp_resync_snmptrapd() {
 	global $config, $snmptrapd_config_file;
@@ -698,4 +716,147 @@ EOF;
 
 	/* Restart the service with the new configuration. */
 	restart_service('net-snmptrapd');
+}
+
+/***************************************************************************
+ *
+ * Input validation section
+ *
+ ***************************************************************************/
+
+/* snmpd - General tab */
+function netsnmp_validate_general($post, &$input_errors) {
+	global $config;
+	if ($post['enabled'] != 'on') {
+		return;
+	}
+
+	if (is_array($config['installedpackages']['netsnmp'])) {
+		$settings = $config['installedpackages']['netsnmp']['config'][0];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+/* snmpd - Host Information tab */
+function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmphostinfo'])) {
+		$settings = $config['installedpackages']['netsnmphostinfo']['config'][0];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+/* snmpd - Users tab */
+function netsnmp_validate_netsnmpusers($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmpusers'])) {
+		$settings = $config['installedpackages']['netsnmpusers']['config'];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+/* snmpd - Communities tab */
+function netsnmp_validate_netsnmpcommunities($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmpcommunities'])) {
+		$settings = $config['installedpackages']['netsnmpcommunities']['config'];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+/* snmpd - Trap Generation tab*/
+function netsnmp_validate_netsnmptrapgen($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmptrapgen'])) {
+		$settings = $config['installedpackages']['netsnmptrapgen']['config'][0];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+
+/* snmptrapd - General tab*/
+function netsnmp_validate_netsnmptrapd($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmptrapd'])) {
+		$settings = $config['installedpackages']['netsnmptrapd']['config'][0];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+/* snmptrapd - Community Auth tab*/
+function netsnmp_validate_netsnmptrapdcommunities($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmptrapdcommunities'])) {
+		$settings = $config['installedpackages']['netsnmptrapdcommunities']['config'];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+/* snmptrapd - User Auth tab*/
+function netsnmp_validate_netsnmptrapdusers($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmptrapdusers'])) {
+		$settings = $config['installedpackages']['netsnmptrapdusers']['config'];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+/* snmptrapd - Trap Format tab */
+function netsnmp_validate_netsnmptrapdformats($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmptrapdformats'])) {
+		$settings = $config['installedpackages']['netsnmptrapdformats']['config'][0];
+	} else {
+		$settings = array();
+	}
+	$nfsettings = &$config['installedpackages']['netsnmptrapdformats']['config'][0];
+	// $input_errors[] = gettext();
+}
+
+/* snmptrapd - Trap Handles tab */
+function netsnmp_validate_netsnmptrapdtraphandles($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmptrapdtraphandles'])) {
+		$settings = $config['installedpackages']['netsnmptrapdtraphandles']['config'];
+	} else {
+		$settings = array();
+	}
+	// $input_errors[] = gettext();
+}
+
+/* snmptrapd - Forwarding of traps to other hosts */
+function netsnmp_validate_netsnmptrapdforwards($post, &$input_errors) {
+	global $config;
+
+	if (is_array($config['installedpackages']['netsnmptrapdforwards'])) {
+		$settings = $config['installedpackages']['netsnmptrapdforwards']['config'][0];
+	} else {
+		$settings = array();
+	}
+	$nwsettings = &$config['installedpackages']['netsnmptrapdforwards']['config'];
+	// $input_errors[] = gettext();
 }

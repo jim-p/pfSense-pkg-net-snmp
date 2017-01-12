@@ -150,4 +150,7 @@
 	<custom_php_resync_config_command>
 		netsnmp_resync_snmptrapd();
 	</custom_php_resync_config_command>
+	<custom_php_validation_command>
+		netsnmp_validate_netsnmptrapdforwards($_POST, $input_errors);
+	</custom_php_validation_command>
 </packagegui>

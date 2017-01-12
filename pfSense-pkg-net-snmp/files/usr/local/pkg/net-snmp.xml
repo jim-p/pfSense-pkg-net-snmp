@@ -255,4 +255,7 @@
 	<custom_php_resync_config_command>
 		netsnmp_resync();
 	</custom_php_resync_config_command>
+	<custom_php_validation_command>
+		netsnmp_validate_general($_POST, $input_errors);
+	</custom_php_validation_command>
 </packagegui>
