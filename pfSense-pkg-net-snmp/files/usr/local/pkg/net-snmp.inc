@@ -253,7 +253,7 @@ function netsnmp_resync() {
 						 "\"{$user['username']}\"";
 				if ($user['minseclev'] != "none") {
 					$snmpd_config .= " {$user['minseclev']}";
-					if (empty($user['baseoid'])) {
+					if (!empty($user['baseoid'])) {
 						$snmpd_config .= " {$user['baseoid']}";
 					}
 				}
@@ -294,7 +294,7 @@ function netsnmp_resync() {
 			if (!empty($community['source'])) {
 				/* TODO: Maybe some sanity checking to ensure that the source type matches the address family */
 				$community_line .= " {$community['source']}";
-				if (empty($community['baseoid'])) {
+				if (!empty($community['baseoid'])) {
 					$community_line .= " {$community['baseoid']}";
 				}
 			}
@@ -443,6 +443,7 @@ function netsnmp_resync() {
 		}
 	}
 
+	$snmpd_config .= "master agentx\n";
 	file_put_contents($snmpd_config_file, $snmpd_config);
 
 	$rc_file_stop = <<<EOF
@@ -468,16 +469,16 @@ EOF;
 			"stop" =>  $rc_file_stop
 		)
 	);
-	start_service('net-snmpd');
+	restart_service('net-snmpd');
 }
 
 /* Write snmptrapd config file */
 function netsnmp_resync_snmptrapd() {
 	global $config, $snmptrapd_config_file;
-	$nsettings = &$config['installedpackages']['netsnmptraplisten']['config'][0];
+	$nsettings = &$config['installedpackages']['netsnmptrapd']['config'][0];
 
 	if ($nsettings['enable_snmptrapd'] != "on") {
-		/* stop service */
+		stop_service('net-snmptrapd');
 		return;
 	}
 
@@ -505,28 +506,82 @@ function netsnmp_resync_snmptrapd() {
 		$snmptrapd_config .= "agentaddress " . implode(',', $agentaddresses) . "\n";
 	}
 
-/*
-	<donotretainnotificationlogs>no</donotretainnotificationlogs>
-	<donotlogtraps>no</donotlogtraps>
-	<ignoreauthfailure>no</ignoreauthfailure>
-	<logoption>-Ls d</logoption>
-	<outputoption>-On</outputoption>
-	<disableauthorization>no</disableauthorization>
-	<authcommunity1>log pfsense</authcommunity1>
-	<authcommunity2></authcommunity2>
-	<authcommunity3></authcommunity3>
-	<authuser1>log -s usm jimp</authuser1>
-	<authuser2></authuser2>
-	<authuser3></authuser3>
-	<format1></format1>
-	<format_custom1></format_custom1>
-	<format_custom2></format_custom2>
-	<format_custom3></format_custom3>
-	<traphandle1></traphandle1>
-	<traphandle2></traphandle2>
-	<traphandle3></traphandle3>
-	<custom_options></custom_options>
-*/
+	if (!empty($nsettings['donotretainnotificationlogs'])) {
+		$snmptrapd_config .= "doNotRetainNotificationLogs {$nsettings['donotretainnotificationlogs']}\n";
+	}
+
+	if (!empty($nsettings['donotlogtraps'])) {
+		$snmptrapd_config .= "doNotLogTraps {$nsettings['donotlogtraps']}\n";
+	}
+
+	if (!empty($nsettings['ignoreauthfailure'])) {
+		$snmptrapd_config .= "ignoreAuthFailure {$nsettings['ignoreauthfailure']}\n";
+	}
+
+	if (!empty($nsettings['disableauthorization'])) {
+		$snmptrapd_config .= "disableAuthorization {$nsettings['disableauthorization']}\n";
+	}
+
+
+	$ncsettings = &$config['installedpackages']['netsnmptrapdcommunities']['config'];
+	if (is_array($ncsettings)) {
+		foreach ($ncsettings as $community) {
+			$snmptrapd_config .= "authCommunity log " .
+						"\"{$community['authcommunity']}\"";
+			if (!empty($community['source'])) {
+				$snmptrapd_config .= " {$community['source']}";
+				if (!empty($community['baseoid'])) {
+					$snmptrapd_config .= " {$community['baseoid']}";
+				}
+			}
+			$snmptrapd_config .= "\n";
+		}
+	}
+
+	$nusettings = &$config['installedpackages']['netsnmptrapdusers']['config'];
+	if (is_array($nusettings)) {
+		foreach ($nusettings as $community) {
+			$snmptrapd_config .= "authUser log " .
+					 "-s {$community['secmodel']} " .
+					 "\"{$community['username']}\"";
+			if ($community['level'] != "none") {
+				$snmptrapd_config .= " {$community['level']}";
+				if (!empty($community['baseoid'])) {
+					$snmptrapd_config .= " {$community['baseoid']}";
+				}
+			}
+			$snmptrapd_config .= "\n";
+		}
+	}
+
+	$nfsettings = &$config['installedpackages']['netsnmptrapdformats']['config'][0];
+
+	if (!empty($nsettings['format1'])) {
+		$snmptrapd_config .= "format1 {$nsettings['format1']}\n";
+	}
+
+	if (!empty($nsettings['format2'])) {
+		$snmptrapd_config .= "format2 {$nsettings['format2']}\n";
+	}
+
+	if (is_array($nsettings['row'])) {
+		foreach ($nsettings['row'] as $format) {
+			if (empty($format['destination'])) {
+				continue;
+			}
+			$snmptrapd_config .= "{$format['destination']} " .
+						"{$format['format_custom']}\n";
+		}
+	}
+
+	$ntsettings = &$config['installedpackages']['netsnmptrapdtraphandles']['config'];
+	if (is_array($ntsettings)) {
+		foreach ($ntsettings as $traphandle) {
+			$snmptrapd_config .= "traphandle {$traphandle['destination']} " .
+						"{$traphandle['program']} " .
+						"{$traphandle['args']}\n";
+		}
+	}
 
 	/* Dump custom options into the configuration as-is */
 	if (!empty($nsettings['custom_options'])) {
@@ -534,5 +589,29 @@ function netsnmp_resync_snmptrapd() {
 	}
 
 	file_put_contents($snmptrapd_config_file, $snmptrapd_config);
-	// write_rcfile()
+
+	$rc_file_stop = <<<EOF
+if [ -e /var/run/snmptrapd.pid ]; then
+	/bin/kill -9 `/bin/cat /var/run/snmptrapd.pid`
+	/bin/rm -f /var/run/snmptrapd.pid
+fi
+EOF;
+	$rc_file_start = <<<EOF
+# Ensure no other copies of the daemons are running or it breaks.
+/usr/bin/killall -9 snmptrapd 2>/dev/null
+sleep 1
+
+/usr/local/sbin/snmptrapd -p /var/run/snmptrapd.pid \
+			-M /usr/share/snmp/mibs/:/usr/local/share/snmp/mibs \
+			-C \
+			-c {$snmptrapd_config_file}
+EOF;
+	write_rcfile(array(
+			"file" => "net-snmptrapd.sh",
+			"start" => $rc_file_start,
+			"stop" =>  $rc_file_stop
+		)
+	);
+
+	restart_service('net-snmptrapd');
 }

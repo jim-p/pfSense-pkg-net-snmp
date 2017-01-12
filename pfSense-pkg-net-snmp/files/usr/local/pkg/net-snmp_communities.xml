@@ -26,7 +26,7 @@
 	]]>
 	</copyright>
 	<name>netsnmp_communities</name>
-	<title>net-snmp: Communities</title>
+	<title>NET-SNMP</title>
 	<include_file>/usr/local/pkg/net-snmp.inc</include_file>
 	<tabs>
 		<tab>
@@ -49,10 +49,6 @@
 		<tab>
 			<text>Trap Generation</text>
 			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
-		</tab>
-		<tab>
-			<text>Trap Listen</text>
-			<url>/pkg_edit.php?xml=net-snmp_traplisten.xml</url>
 		</tab>
 	</tabs>
 	<delete_string>SNMP user deleted</delete_string>

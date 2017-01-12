@@ -26,7 +26,7 @@
 	]]>
 	</copyright>
 	<name>netsnmp</name>
-	<title>net-snmp: General Settings</title>
+	<title>NET-SNMP</title>
 	<include_file>/usr/local/pkg/net-snmp.inc</include_file>
 	<menu>
 		<name>NET-SNMP Daemon</name>
@@ -41,7 +41,7 @@
 		<description>NET-SNMP Daemon</description>
 	</service>
 	<service>
-		<name>net-snmpdtrapd</name>
+		<name>net-snmptrapd</name>
 		<rcfile>net-snmptrapd.sh</rcfile>
 		<executable>snmpdtrapd</executable>
 		<description>NET-SNMP Trap Listening Daemon</description>
@@ -67,10 +67,6 @@
 		<tab>
 			<text>Trap Generation</text>
 			<url>/pkg_edit.php?xml=net-snmp_trapgen.xml</url>
-		</tab>
-		<tab>
-			<text>Trap Listen</text>
-			<url>/pkg_edit.php?xml=net-snmp_traplisten.xml</url>
 		</tab>
 	</tabs>
 	<advanced_options>enabled</advanced_options>
