@@ -110,25 +110,26 @@ function netsnmp_resync() {
 
 	/* The binding / agent addresses control where and how snmpd listens for incoming connections. */
 	$agentaddresses = array();
-	if (is_array($nsettings['row'])) {
-		foreach ($nsettings['row'] as $agent) {
-			$aa = "";
-			/* At a minimum, a port must be supplied. UDP is assumed in that case */
-			if (!empty($agent['snmpport'])) {
-				$aa = $agent['snmpport'];
-			}
-			/* An address or hostname is optional but needs to be before the port */
-			if (!empty($agent['ipaddress'])) {
-				$aa = "{$agent['ipaddress']}:{$aa}";
-			}
-			/* Transport is optional (UDP is assumed) */
-			if (!empty($agent['transport'])) {
-				$aa = "{$agent['transport']}:{$aa}";
-			}
-			/* Only keep this entry if it contains data */
-			if (!empty($aa)) {
-				$agentaddresses[] = $aa;
-			}
+	if (!is_array($nsettings['row'])) {
+		$nsettings['row'] = array();
+	}
+	foreach ($nsettings['row'] as $agent) {
+		$aa = "";
+		/* At a minimum, a port must be supplied. UDP is assumed in that case */
+		if (!empty($agent['snmpport'])) {
+			$aa = $agent['snmpport'];
+		}
+		/* An address or hostname is optional but needs to be before the port */
+		if (!empty($agent['ipaddress'])) {
+			$aa = "{$agent['ipaddress']}:{$aa}";
+		}
+		/* Transport is optional (UDP is assumed) */
+		if (!empty($agent['transport'])) {
+			$aa = "{$agent['transport']}:{$aa}";
+		}
+		/* Only keep this entry if it contains data */
+		if (!empty($aa)) {
+			$agentaddresses[] = $aa;
 		}
 	}
 
@@ -226,99 +227,102 @@ function netsnmp_resync() {
 
 	/* Extended commands (formerly exec) and extendfix */
 	/* TODO: Check if the parameters need quoting */
-	if (is_array($nhisettings['row'])) {
-		foreach ($nhisettings['row'] as $extend) {
-			$snmpd_config .= "{$extend['ext_type']} " .
-					 "{$extend['ext_miboid']} " .
-					 "{$extend['ext_name']} " .
-					 "{$extend['ext_prog']} " .
-					 "{$extend['ext_args']}\n";
-		}
+	if (!is_array($nhisettings['row'])) {
+		$nhisettings['row'] = array();
+	}
+	foreach ($nhisettings['row'] as $extend) {
+		$snmpd_config .= "{$extend['ext_type']} " .
+				 "{$extend['ext_miboid']} " .
+				 "{$extend['ext_name']} " .
+				 "{$extend['ext_prog']} " .
+				 "{$extend['ext_args']}\n";
 	}
 
 	/* SNMPv3 Users */
 	$nusettings = &$config['installedpackages']['netsnmpusers']['config'];
 
 	$snmpd_users_config = "";
-	if (is_array($nusettings)) {
-		foreach ($nusettings as $user) {
-			/* To make it easier to define a user in one pass, the user settings have both user and cert settings */
-			if (($user['snmpv3_type'] == "user") || ($user['snmpv3_type'] == "both")) {
-				/* Create a user entry in the USM table. This only defines the user and its authentication method/transport */
-				$createuser = "createUser \"{$user['username']}\" " .
-						"{$user['authtype']} " .
-						"\"" . str_replace('"', '\"', $user['password']) . "\"";
-				/* Only add the privacy protocol if the user needs one */
-				if ($user['privacyprotocol'] != "none") {
-					if (empty($user['passphrase'])) {
-						$user['passphrase'] = $user['password'];
-					}
-					$createuser .= " {$user['privacyprotocol']} " .
-							"\"" . str_replace('"', '\"', $user['passphrase']) . "\"";
+	if (!is_array($nusettings)) {
+		$nusettings = array();
+	}
+	foreach ($nusettings as $user) {
+		/* To make it easier to define a user in one pass, the user settings have both user and cert settings */
+		if (($user['snmpv3_type'] == "user") || ($user['snmpv3_type'] == "both")) {
+			/* Create a user entry in the USM table. This only defines the user and its authentication method/transport */
+			$createuser = "createUser \"{$user['username']}\" " .
+					"{$user['authtype']} " .
+					"\"" . str_replace('"', '\"', $user['password']) . "\"";
+			/* Only add the privacy protocol if the user needs one */
+			if ($user['privacyprotocol'] != "none") {
+				if (empty($user['passphrase'])) {
+					$user['passphrase'] = $user['password'];
 				}
-				/* createUser directives go into a separate configuration file that gets changed by snmpd */
-				$snmpd_users_config .= "{$createuser}\n";
-
-				/* Each SNMPv3 user also needs an rouser or rwuser line to define its access */
-				$snmpd_config .= "{$user['rorwuser']} " .
-						 "-s {$user['secmodel']} " .
-						 "\"{$user['username']}\"";
-				if ($user['minseclev'] != "none") {
-					$snmpd_config .= " {$user['minseclev']}";
-					if (!empty($user['baseoid'])) {
-						$snmpd_config .= " {$user['baseoid']}";
-					}
-				}
-				$snmpd_config .= "\n";
+				$createuser .= " {$user['privacyprotocol']} " .
+						"\"" . str_replace('"', '\"', $user['passphrase']) . "\"";
 			}
-			if (($user['snmpv3_type'] == "cert") || ($user['snmpv3_type'] == "both")) {
-				/* Defines a mapping of a certificate parameter to an SNMPv3 username (defined previously)
-				   This requires the fingerprint of the certificate in order to identify it specifically,
-				   and then the option defines which cert field to use, or a manual override to map to a
-				   specific user directly.
-				 */
-				$snmpd_config .= "certSecName " .
-						 "{$user['priority']} " .
-						 "{$user['fingerprint']} " .
-						 "--{$user['options']}";
-				/* If SecName was chosen, define the username directly */
-				if ($user['options'] == "sn") {
-					$snmpd_config .= " {$user['secname']}";
-				}
-				$snmpd_config .= "\n";
-			}
-		}
+			/* createUser directives go into a separate configuration file that gets changed by snmpd */
+			$snmpd_users_config .= "{$createuser}\n";
 
-		/* Don't bother to write the users config if there are no users */
-		if (!empty($snmpd_users_config)) {
-			/* Write the createUser configuration file */
-			file_put_contents($snmpd_users_file, $snmpd_users_config);
+			/* Each SNMPv3 user also needs an rouser or rwuser line to define its access */
+			$snmpd_config .= "{$user['rorwuser']} " .
+					 "-s {$user['secmodel']} " .
+					 "\"{$user['username']}\"";
+			if ($user['minseclev'] != "none") {
+				$snmpd_config .= " {$user['minseclev']}";
+				if (!empty($user['baseoid'])) {
+					$snmpd_config .= " {$user['baseoid']}";
+				}
+			}
+			$snmpd_config .= "\n";
 		}
+		if (($user['snmpv3_type'] == "cert") || ($user['snmpv3_type'] == "both")) {
+			/* Defines a mapping of a certificate parameter to an SNMPv3 username (defined previously)
+			   This requires the fingerprint of the certificate in order to identify it specifically,
+			   and then the option defines which cert field to use, or a manual override to map to a
+			   specific user directly.
+			 */
+			$snmpd_config .= "certSecName " .
+					 "{$user['priority']} " .
+					 "{$user['fingerprint']} " .
+					 "--{$user['options']}";
+			/* If SecName was chosen, define the username directly */
+			if ($user['options'] == "sn") {
+				$snmpd_config .= " {$user['secname']}";
+			}
+			$snmpd_config .= "\n";
+		}
+	}
+
+	/* Don't bother to write the users config if there are no users */
+	if (!empty($snmpd_users_config)) {
+		/* Write the createUser configuration file */
+		file_put_contents($snmpd_users_file, $snmpd_users_config);
 	}
 
 	/* SNMPv1 & SNMPv2c Communities */
 	$ncsettings = &$config['installedpackages']['netsnmpcommunities']['config'];
-	if (is_array($ncsettings)) {
-		foreach ($ncsettings as $community) {
-			/* Build the parameters first, add the type later as it could result in repetition. */
-			$community_line = $community['community'];
+	if (!is_array($ncsettings)) {
+		$ncsettings = array();
+	}
+	foreach ($ncsettings as $community) {
+		/* Build the parameters first, add the type later as it could result in repetition. */
+		$community_line = $community['community'];
 
-			/* An OID restriction can only be specified if a source is also defined, use source "default" to set w/o network source */
-			if (!empty($community['source'])) {
-				/* TODO: Maybe some sanity checking to ensure that the source type matches the address family */
-				$community_line .= " {$community['source']}";
-				if (!empty($community['baseoid'])) {
-					$community_line .= " {$community['baseoid']}";
-				}
+		/* An OID restriction can only be specified if a source is also defined, use source "default" to set w/o network source */
+		if (!empty($community['source'])) {
+			/* TODO: Maybe some sanity checking to ensure that the source type matches the address family */
+			$community_line .= " {$community['source']}";
+			if (!empty($community['baseoid'])) {
+				$community_line .= " {$community['baseoid']}";
 			}
+		}
 
-			/* Build the community type based on the address family, if both are needed, build both lines. */
-			if (($community['commtype'] == "IPv4") || ($community['commtype'] == "both")) {
-				$snmpd_config .= "{$community['rorwcommunity']} {$community_line}\n";
-			}
-			if (($community['commtype'] == "IPv6") || ($community['commtype'] == "both")) {
-				$snmpd_config .= "{$community['rorwcommunity']}6 {$community_line}\n";
-			}
+		/* Build the community type based on the address family, if both are needed, build both lines. */
+		if (($community['commtype'] == "IPv4") || ($community['commtype'] == "both")) {
+			$snmpd_config .= "{$community['rorwcommunity']} {$community_line}\n";
+		}
+		if (($community['commtype'] == "IPv6") || ($community['commtype'] == "both")) {
+			$snmpd_config .= "{$community['rorwcommunity']}6 {$community_line}\n";
 		}
 	}
 
@@ -447,17 +451,18 @@ function netsnmp_resync() {
 	}
 
 	/* 'monitor' entries define conditions to trigger traps. The control is a rowhelper, so loop through its entries. */
-	if (is_array($ntgsettings['row'])) {
-		foreach ($ntgsettings['row'] as $monitor) {
-			if (empty($monitor['monitor_name'])) {
-				continue;
-			}
-			$snmpd_config .= "monitor {$monitor['monitor_options']} " .
-					 "{$monitor['monitor_name']} " .
-					 "{$monitor['monitor_expression']} " .
-					 "{$monitor['monitor_notificationevent']} " .
-					 "{$monitor['monitor_setevent']}\n";
+	if (!is_array($ntgsettings['row'])) {
+		$ntgsettings['row'] = array();
+	}
+	foreach ($ntgsettings['row'] as $monitor) {
+		if (empty($monitor['monitor_name'])) {
+			continue;
 		}
+		$snmpd_config .= "monitor {$monitor['monitor_options']} " .
+				 "{$monitor['monitor_name']} " .
+				 "{$monitor['monitor_expression']} " .
+				 "{$monitor['monitor_notificationevent']} " .
+				 "{$monitor['monitor_setevent']}\n";
 	}
 
 	/* Running snmptrapd requires snmpd to run as an agentx master */
@@ -518,25 +523,26 @@ function netsnmp_resync_snmptrapd() {
 
 	/* The protocol and interface binding for snmptrapd works the same as snmpd */
 	$agentaddresses = array();
-	if (is_array($nsettings['row'])) {
-		foreach ($nsettings['row'] as $agent) {
-			$aa = "";
-			/* At a minimum, a port must be supplied. UDP is assumed in that case */
-			if (!empty($agent['snmpport'])) {
-				$aa = $agent['snmpport'];
-			}
-			/* An address or hostname is optional but needs to be before the port */
-			if (!empty($agent['ipaddress'])) {
-				$aa = "{$agent['ipaddress']}:{$aa}";
-			}
-			/* Transport is optional (UDP is assumed) */
-			if (!empty($agent['transport'])) {
-				$aa = "{$agent['transport']}:{$aa}";
-			}
-			/* Only keep this entry if it contains data */
-			if (!empty($aa)) {
-				$agentaddresses[] = $aa;
-			}
+	if (!is_array($nsettings['row'])) {
+		$nsettings['row'] = array();
+	}
+	foreach ($nsettings['row'] as $agent) {
+		$aa = "";
+		/* At a minimum, a port must be supplied. UDP is assumed in that case */
+		if (!empty($agent['snmpport'])) {
+			$aa = $agent['snmpport'];
+		}
+		/* An address or hostname is optional but needs to be before the port */
+		if (!empty($agent['ipaddress'])) {
+			$aa = "{$agent['ipaddress']}:{$aa}";
+		}
+		/* Transport is optional (UDP is assumed) */
+		if (!empty($agent['transport'])) {
+			$aa = "{$agent['transport']}:{$aa}";
+		}
+		/* Only keep this entry if it contains data */
+		if (!empty($aa)) {
+			$agentaddresses[] = $aa;
 		}
 	}
 
@@ -563,53 +569,55 @@ function netsnmp_resync_snmptrapd() {
 
 	/* Community-based Authentication for receiving traps */
 	$ncsettings = &$config['installedpackages']['netsnmptrapdcommunities']['config'];
-	if (is_array($ncsettings)) {
-		foreach ($ncsettings as $community) {
-			/* If no type is specified, assume all types. */
-			if (empty($community['type'])) {
-				$community['type'] = "log,net,execute";
-			}
-
-			$snmptrapd_config .= "authCommunity {$community['type']} " .
-						"\"{$community['authcommunity']}\"";
-
-			/* Source restrictions are optional */
-			if (!empty($community['source'])) {
-				$snmptrapd_config .= " {$community['source']}";
-
-				/* A base OID restriction is optional and can only be set when a source is also defined. */
-				if (!empty($community['baseoid'])) {
-					$snmptrapd_config .= " {$community['baseoid']}";
-				}
-			}
-			$snmptrapd_config .= "\n";
+	if (!is_array($ncsettings)) {
+		$ncsettings = array();
+	}
+	foreach ($ncsettings as $community) {
+		/* If no type is specified, assume all types. */
+		if (empty($community['type'])) {
+			$community['type'] = "log,net,execute";
 		}
+
+		$snmptrapd_config .= "authCommunity {$community['type']} " .
+					"\"{$community['authcommunity']}\"";
+
+		/* Source restrictions are optional */
+		if (!empty($community['source'])) {
+			$snmptrapd_config .= " {$community['source']}";
+
+			/* A base OID restriction is optional and can only be set when a source is also defined. */
+			if (!empty($community['baseoid'])) {
+				$snmptrapd_config .= " {$community['baseoid']}";
+			}
+		}
+		$snmptrapd_config .= "\n";
 	}
 
 	/* User-based Authentication for receiving traps */
 	$nusettings = &$config['installedpackages']['netsnmptrapdusers']['config'];
-	if (is_array($nusettings)) {
-		foreach ($nusettings as $user) {
-			/* If no type is specified, assume all types. */
-			if (empty($user['type'])) {
-				$user['type'] = "log,net,execute";
-			}
-
-			$snmptrapd_config .= "authUser {$user['type']} " .
-					 "-s {$user['secmodel']} " .
-					 "\"{$user['username']}\"";
-
-			/* Security level restrictions are optional */
-			if ($user['level'] != "none") {
-				$snmptrapd_config .= " {$user['level']}";
-
-				/* A base OID restriction is optional and can only be set when a security level is also defined. */
-				if (!empty($user['baseoid'])) {
-					$snmptrapd_config .= " {$user['baseoid']}";
-				}
-			}
-			$snmptrapd_config .= "\n";
+	if (!is_array($nusettings)) {
+		$nusettings = array();
+	}
+	foreach ($nusettings as $user) {
+		/* If no type is specified, assume all types. */
+		if (empty($user['type'])) {
+			$user['type'] = "log,net,execute";
 		}
+
+		$snmptrapd_config .= "authUser {$user['type']} " .
+				 "-s {$user['secmodel']} " .
+				 "\"{$user['username']}\"";
+
+		/* Security level restrictions are optional */
+		if ($user['level'] != "none") {
+			$snmptrapd_config .= " {$user['level']}";
+
+			/* A base OID restriction is optional and can only be set when a security level is also defined. */
+			if (!empty($user['baseoid'])) {
+				$snmptrapd_config .= " {$user['baseoid']}";
+			}
+		}
+		$snmptrapd_config .= "\n";
 	}
 
 	/* Trap Format tab */
@@ -625,61 +633,65 @@ function netsnmp_resync_snmptrapd() {
 
 	/* These formats are in a rowhelper to make the page less cluttered,
 	   but there should only be one of each "destination" defined. */
-	if (is_array($nsettings['row'])) {
-		foreach ($nsettings['row'] as $format) {
-			if (empty($format['destination'])) {
-				continue;
-			}
-			$snmptrapd_config .= "{$format['destination']} " .
-						"{$format['format_custom']}\n";
+	if (!is_array($nsettings['row'])) {
+		$nsettings['row'] = array();
+	}
+	foreach ($nsettings['row'] as $format) {
+		if (empty($format['destination'])) {
+			continue;
 		}
+		$snmptrapd_config .= "{$format['destination']} " .
+					"{$format['format_custom']}\n";
 	}
 
 	/* Trap Handles tab */
 	$ntsettings = &$config['installedpackages']['netsnmptrapdtraphandles']['config'];
 
 	/* Nothing fancy. Executes programs when a trap arrives, not much validation we can do. */
-	if (is_array($ntsettings)) {
-		foreach ($ntsettings as $traphandle) {
-			$snmptrapd_config .= "traphandle {$traphandle['destination']} " .
-						"{$traphandle['program']} " .
-						"{$traphandle['args']}\n";
-		}
+	if (!is_array($ntsettings)) {
+		$ntsettings = array();
+	}
+	foreach ($ntsettings as $traphandle) {
+		$snmptrapd_config .= "traphandle {$traphandle['destination']} " .
+					"{$traphandle['program']} " .
+					"{$traphandle['args']}\n";
 	}
 
 	/* Forwarding of traps to other hosts */
 	$nwsettings = &$config['installedpackages']['netsnmptrapdforwards']['config'];
-	if (is_array($nwsettings)) {
-		foreach ($nwsettings as $forward) {
-			/* The forwarding addresses control where and how snmptrapd will deliver traps to another daemon. */
-			$agentaddresses = array();
-			if (is_array($forward['row'])) {
-				foreach ($forward['row'] as $agent) {
-					$aa = "";
-					/* At a minimum, a port must be supplied. UDP is assumed in that case */
-					if (!empty($agent['snmpport'])) {
-						$aa = $agent['snmpport'];
-					}
-					/* An address or hostname is optional but needs to be before the port */
-					if (!empty($agent['ipaddress'])) {
-						$aa = "{$agent['ipaddress']}:{$aa}";
-					}
-					/* Transport is optional (UDP is assumed) */
-					if (!empty($agent['transport'])) {
-						$aa = "{$agent['transport']}:{$aa}";
-					}
-					/* Only keep this entry if it contains data */
-					if (!empty($aa)) {
-						$agentaddresses[] = $aa;
-					}
-				}
+	if (!is_array($nwsettings)) {
+		$nwsettings = array();
+	}
+	foreach ($nwsettings as $forward) {
+		/* The forwarding addresses control where and how snmptrapd will deliver traps to another daemon. */
+		$agentaddresses = array();
+		if (is_array($forward['row'])) {
+			$forward['row'] = array();
+		}
+		foreach ($forward['row'] as $agent) {
+			$aa = "";
+			/* At a minimum, a port must be supplied. UDP is assumed in that case */
+			if (!empty($agent['snmpport'])) {
+				$aa = $agent['snmpport'];
 			}
+			/* An address or hostname is optional but needs to be before the port */
+			if (!empty($agent['ipaddress'])) {
+				$aa = "{$agent['ipaddress']}:{$aa}";
+			}
+			/* Transport is optional (UDP is assumed) */
+			if (!empty($agent['transport'])) {
+				$aa = "{$agent['transport']}:{$aa}";
+			}
+			/* Only keep this entry if it contains data */
+			if (!empty($aa)) {
+				$agentaddresses[] = $aa;
+			}
+		}
 
-			/* Only write the forward entry if there is a valid destination. */
-			if (!empty($agentaddresses)) {
-				/* Agent address list is comma-separated, no spaces: a:b:c,d:e:f,g:h:i */
-				$snmptrapd_config .= "forward {$forward['destination']} " . implode(',', $agentaddresses) . "\n";
-			}
+		/* Only write the forward entry if there is a valid destination. */
+		if (!empty($agentaddresses)) {
+			/* Agent address list is comma-separated, no spaces: a:b:c,d:e:f,g:h:i */
+			$snmptrapd_config .= "forward {$forward['destination']} " . implode(',', $agentaddresses) . "\n";
 		}
 	}
 	/* Dump custom options into the configuration as-is */
@@ -1221,5 +1233,4 @@ function netsnmp_validate_netsnmptrapdforwards($post, &$input_errors) {
 		}
 		$i++;
 	}
-
 }
