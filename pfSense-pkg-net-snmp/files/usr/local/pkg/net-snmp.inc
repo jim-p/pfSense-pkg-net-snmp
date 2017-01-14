@@ -247,14 +247,14 @@ function netsnmp_resync() {
 				/* Create a user entry in the USM table. This only defines the user and its authentication method/transport */
 				$createuser = "createUser \"{$user['username']}\" " .
 						"{$user['authtype']} " .
-						"\"{$user['password']}\"";
+						"\"" . str_replace('"', '\"', $user['password']) . "\"";
 				/* Only add the privacy protocol if the user needs one */
 				if ($user['privacyprotocol'] != "none") {
 					if (empty($user['passphrase'])) {
 						$user['passphrase'] = $user['password'];
 					}
 					$createuser .= " {$user['privacyprotocol']} " .
-							"\"{$user['passphrase']}\"";
+							"\"" . str_replace('"', '\"', $user['passphrase']) . "\"";
 				}
 				/* createUser directives go into a separate configuration file that gets changed by snmpd */
 				$snmpd_users_config .= "{$createuser}\n";
@@ -797,6 +797,7 @@ function netsnmp_validate_general($post, &$input_errors) {
 		$input_errors[] = gettext("Max Get Bulk Responses must be an integer -1 or greater.");
 	}
 }
+
 /* snmpd - Host Information tab */
 function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
 	global $config;
@@ -806,7 +807,6 @@ function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
 	} else {
 		$settings = array();
 	}
-	// $input_errors[] = gettext("");
 	/* interface fadeout: blank or numeric, positive */
 	if (!is_numericint($post['interface_fadeout'])) {
 		$input_errors[] = gettext("Interface Fadeout must be an integer greater than 0.");
@@ -864,16 +864,46 @@ function netsnmp_validate_netsnmpusers($post, &$input_errors) {
 	} else {
 		$settings = array();
 	}
-	// $input_errors[] = gettext("");
-	/* auth type: SHA or MD5 */
-	/* password: >=8 chars, no "? */
-	/* privacy protocol: AES, DES, none */
-	/* passphrase: >=8 chars, no "? */
-	/* sec model: usm, tsm */
+	/* snmpv3_type: user, cert, both */
+	if (!in_array($post['snmpv3_type'], array('user', 'cert', 'both'))) {
+		$input_errors[] = gettext("Invalid SNMPv3 user type.");
+	}
+	/* authtype: SHA or MD5 */
+	if (!in_array($post['authtype'], array('SHA', 'MD5'))) {
+		$input_errors[] = gettext("Invalid authentication type.");
+	}
+	/* password: >=8 chars */
+	if (strlen($post['password']) < 8) {
+		$input_errors[] = gettext("The supplied Password is too short. It must be 8 characters or longer.");
+	}
+	/* privacyprotocol: AES, DES, none */
+	if (!in_array($post['privacyprotocol'], array('AES', 'DES', 'none'))) {
+		$input_errors[] = gettext("Invalid Privacy Protocol.");
+	}
+	/* passphrase: >=8 chars */
+	if (strlen($post['passphrase']) < 8) {
+		$input_errors[] = gettext("The supplied Passphrase is too short. It must be 8 characters or longer.");
+	}
+	/* secmodel: usm, tsm */
+	if (!in_array($post['secmodel'], array('usm', 'tsm'))) {
+		$input_errors[] = gettext("Invalid Security Model type.");
+	}
 	/* rorwuser: rouser, rwuser */
+	if (!in_array($post['rorwuser'], array('rouser', 'rwuser'))) {
+		$input_errors[] = gettext("Invalid Read/Write Access type.");
+	}
 	/* minseclev: priv, auth, noauth, none */
+	if (!in_array($post['minseclev'], array('priv', 'auth', 'noauth', 'none'))) {
+		$input_errors[] = gettext("Invalid Minimum Security Level.");
+	}
 	/* priority: int, positive */
-	/* options: cn, sn, rfc822, dns, ip, any */
+	if (!empty($post['priority']) && !is_numericint($post['priority'])) {
+		$input_errors[] = gettext("The supplied certificate Priority is invalid. It must be a positive integer.");
+	}
+	/* options: 'cn', 'sn', 'rfc822', 'dns', 'ip', 'any' */
+	if (!in_array($post['options'], array('cn', 'sn', 'rfc822', 'dns', 'ip', 'any'))) {
+		$input_errors[] = gettext("Invalid Certificate Field type.");
+	}
 }
 
 /* snmpd - Communities tab */
@@ -885,48 +915,146 @@ function netsnmp_validate_netsnmpcommunities($post, &$input_errors) {
 	} else {
 		$settings = array();
 	}
-	// $input_errors[] = gettext("");
 	/* rorwcommunity: rocommunity, rwcommunity */
+	if (!in_array($post['rorwcommunity'], array('rocommunity', 'rwcommunity'))) {
+		$input_errors[] = gettext("Invalid Read/Write Access type.");
+	}
 	/* commtype: IPv4, IPv6, both */
-	/* source restriction: 'default', IPv4 addr or subnet if commtype=IPv4, IPv6 addr or subnet if commtype = IPv6*/
+	if (!in_array($post['commtype'], array('IPv4', 'IPv6', 'both'))) {
+		$input_errors[] = gettext("Invalid Address Family.");
+	}
+	/* source: 'default', IPv4 addr or subnet if commtype=IPv4, IPv6 addr or subnet if commtype = IPv6*/
+	if (!empty($post['source']) && ($post['source'] != "default")) {
+		switch ($post['commtype']) {
+			case "IPv4":
+				if (!is_ipaddrv4($post['source']) && !is_subnetv4($post['source'])) {
+					$input_errors[] = gettext("The IP address or subnet is not valid or does not match the selecteed Address Family.");
+				}
+				break;
+			case "IPv6":
+				if (!is_ipaddrv6($post['source']) && !is_subnetv6($post['source'])) {
+					$input_errors[] = gettext("The IP address or subnet is not valid or does not match the selecteed Address Family.");
+				}
+				break;
+			case "both":
+				$input_errors[] = gettext("A source may not be specified when Address Family is set to 'both'.");
+				break;
+			default:
+		}
+	}
 }
 
 /* snmpd - Trap Generation tab*/
 function netsnmp_validate_netsnmptrapgen($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmptrapgen'])) {
-		$settings = $config['installedpackages']['netsnmptrapgen']['config'][0];
+	if (is_array($config['installedpackages']['netsnmpusers'])) {
+		$usettings = $config['installedpackages']['netsnmpusers']['config'];
 	} else {
-		$settings = array();
+		$usettings = array();
 	}
 	// $input_errors[] = gettext("");
 	/* authtrapenable: 1, 2 */
+	if (!in_array($post['authtrapenable'], array('1', '2'))) {
+		$input_errors[] = gettext("Invalid Authentication Traps value.");
+	}
 	/* linkupdownnotifications: yes, no */
+	if (!in_array($post['linkupdownnotifications'], array('yes', 'no'))) {
+		$input_errors[] = gettext("Invalid Link Up/Down Traps value.");
+	}
 	/* defaultmonitors: yes, no */
-	/* iquerySecName: valid user */
+	if (!in_array($post['defaultmonitors'], array('yes', 'no'))) {
+		$input_errors[] = gettext("Invalid Default Monitors value.");
+	}
+	/* iquerysecname: valid user */
+	$found_user = false;
+	foreach ($usettings as $user) {
+		if ($post['iquerysecname'] == $user['username']) {
+			$found_user = true;
+		}
+	}
+	if (!$found_user) {
+		$input_errors[] = gettext("Invalid Internal Query User value.");
+	}
 	/* v1trapaddress: blank, ip address */
+	if (!empty($post['v1trapaddress']) && (!is_ipaddr($post['v1trapaddress']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for SNMPv1 Local Trap Agent Address, or the field must be blank.");
+	}
 
 	/* trapsink1_host: blank, ip address, hostname */
+	if (!empty($post['trapsink1_host']) && (!is_ipaddr($post['trapsink1_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for SNMPv1 Trap Sink #1, or the field must be blank.");
+	}
 	/* trapsink1_port: blank, port number */
+	if (!empty($post['trapsink1_port']) && (!is_port($post['trapsink1_port']))) {
+		$input_errors[] = gettext(" port number must be entered for SNMPv1 Trap Sink #1, or the field must be blank.");
+	}
 	/* trapsink2_host: blank, ip address, hostname */
+	if (!empty($post['trapsink2_host']) && (!is_ipaddr($post['trapsink2_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for SNMPv1 Trap Sink #2, or the field must be blank.");
+	}
 	/* trapsink2_port: blank, port number */
+	if (!empty($post['trapsink2_port']) && (!is_port($post['trapsink2_port']))) {
+		$input_errors[] = gettext(" port number must be entered for SNMPv1 Trap Sink #2, or the field must be blank.");
+	}
 	/* trapsink3_host: blank, ip address, hostname */
+	if (!empty($post['trapsink3_host']) && (!is_ipaddr($post['trapsink3_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for SNMPv1 Trap Sink #3, or the field must be blank.");
+	}
 	/* trapsink3_port: blank, port number */
+	if (!empty($post['trapsink3_port']) && (!is_port($post['trapsink3_port']))) {
+		$input_errors[] = gettext(" port number must be entered for SNMPv1 Trap Sink #2, or the field must be blank.");
+	}
 
 	/* trap2sink1_host: blank, ip address, hostname */
+	if (!empty($post['trap2sink1_host']) && (!is_ipaddr($post['trap2sink1_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for SNMPv2c Trap Sink #1, or the field must be blank.");
+	}
 	/* trap2sink1_port: blank, port number */
+	if (!empty($post['trap2sink1_port']) && (!is_port($post['trap2sink1_port']))) {
+		$input_errors[] = gettext(" port number must be entered for SNMPv2c Trap Sink #1, or the field must be blank.");
+	}
 	/* trap2sink2_host: blank, ip address, hostname */
+	if (!empty($post['trap2sink2_host']) && (!is_ipaddr($post['trap2sink2_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for SNMPv2c Trap Sink #2, or the field must be blank.");
+	}
 	/* trap2sink2_port: blank, port number */
+	if (!empty($post['trap2sink2_port']) && (!is_port($post['trap2sink2_port']))) {
+		$input_errors[] = gettext(" port number must be entered for SNMPv2c Trap Sink #2, or the field must be blank.");
+	}
 	/* trap2sink3_host: blank, ip address, hostname */
+	if (!empty($post['trap2sink3_host']) && (!is_ipaddr($post['trap2sink3_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for SNMPv2c Trap Sink #3, or the field must be blank.");
+	}
 	/* trap2sink3_port: blank, port number */
+	if (!empty($post['trap2sink3_port']) && (!is_port($post['trap2sink3_port']))) {
+		$input_errors[] = gettext(" port number must be entered for SNMPv2c Trap Sink #3, or the field must be blank.");
+	}
 
 	/* informsink1_host: blank, ip address, hostname */
+	if (!empty($post['informsink1_host']) && (!is_ipaddr($post['informsink1_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for Inform Sink #1, or the field must be blank.");
+	}
 	/* informsink1_port: blank, port number */
+	if (!empty($post['informsink1_port']) && (!is_port($post['informsink1_port']))) {
+		$input_errors[] = gettext(" port number must be entered for Inform Sink #1, or the field must be blank.");
+	}
 	/* informsink2_host: blank, ip address, hostname */
+	if (!empty($post['informsink2_host']) && (!is_ipaddr($post['informsink2_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for Inform Sink #2, or the field must be blank.");
+	}
 	/* informsink2_port: blank, port number */
+	if (!empty($post['informsink2_port']) && (!is_port($post['informsink2_port']))) {
+		$input_errors[] = gettext(" port number must be entered for Inform Sink #2, or the field must be blank.");
+	}
 	/* informsink3_host: blank, ip address, hostname */
+	if (!empty($post['informsink3_host']) && (!is_ipaddr($post['informsink3_host']))) {
+		$input_errors[] = gettext("An IPv4 Address/Hostname must be entered for Inform Sink #3, or the field must be blank.");
+	}
 	/* informsink3_port: blank, port number */
+	if (!empty($post['informsink3_port']) && (!is_port($post['informsink3_port']))) {
+		$input_errors[] = gettext(" port number must be entered for Inform Sink #3, or the field must be blank.");
+	}
 }
 
 

@@ -125,7 +125,7 @@
 
 		<field>
 			<fielddescr>Internal Query User</fielddescr>
-			<fieldname>iquerySecName</fieldname>
+			<fieldname>iquerysecname</fieldname>
 			<description><![CDATA[Choose the username used internally for querying information for evaluating expressions or building notification payloads.
 				<br/>Create a user on the Users tab before selecting a value in this field.]]></description>
 			<type>select_source</type>
