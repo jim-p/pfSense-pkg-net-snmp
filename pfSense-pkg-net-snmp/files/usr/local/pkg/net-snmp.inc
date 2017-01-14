@@ -731,11 +731,6 @@ function netsnmp_validate_general($post, &$input_errors) {
 		return;
 	}
 
-	if (is_array($config['installedpackages']['netsnmp'])) {
-		$settings = $config['installedpackages']['netsnmp']['config'][0];
-	} else {
-		$settings = array();
-	}
 	/* Interface binding:
 		D/TLS blank or hostname.
 		UDP/TCP blank, hostname, IPv4 addr
@@ -802,11 +797,6 @@ function netsnmp_validate_general($post, &$input_errors) {
 function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmphostinfo'])) {
-		$settings = $config['installedpackages']['netsnmphostinfo']['config'][0];
-	} else {
-		$settings = array();
-	}
 	/* interface fadeout: blank or numeric, positive */
 	if (!is_numericint($post['interface_fadeout'])) {
 		$input_errors[] = gettext("Interface Fadeout must be an integer greater than 0.");
@@ -859,11 +849,6 @@ function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
 function netsnmp_validate_netsnmpusers($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmpusers'])) {
-		$settings = $config['installedpackages']['netsnmpusers']['config'];
-	} else {
-		$settings = array();
-	}
 	/* snmpv3_type: user, cert, both */
 	if (!in_array($post['snmpv3_type'], array('user', 'cert', 'both'))) {
 		$input_errors[] = gettext("Invalid SNMPv3 user type.");
@@ -910,11 +895,6 @@ function netsnmp_validate_netsnmpusers($post, &$input_errors) {
 function netsnmp_validate_netsnmpcommunities($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmpcommunities'])) {
-		$settings = $config['installedpackages']['netsnmpcommunities']['config'];
-	} else {
-		$settings = array();
-	}
 	/* rorwcommunity: rocommunity, rwcommunity */
 	if (!in_array($post['rorwcommunity'], array('rocommunity', 'rwcommunity'))) {
 		$input_errors[] = gettext("Invalid Read/Write Access type.");
@@ -953,7 +933,6 @@ function netsnmp_validate_netsnmptrapgen($post, &$input_errors) {
 	} else {
 		$usettings = array();
 	}
-	// $input_errors[] = gettext("");
 	/* authtrapenable: 1, 2 */
 	if (!in_array($post['authtrapenable'], array('1', '2'))) {
 		$input_errors[] = gettext("Invalid Authentication Traps value.");
@@ -1062,13 +1041,6 @@ function netsnmp_validate_netsnmptrapgen($post, &$input_errors) {
 function netsnmp_validate_netsnmptrapd($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmptrapd'])) {
-		$settings = $config['installedpackages']['netsnmptrapd']['config'][0];
-	} else {
-		$settings = array();
-	}
-	// $input_errors[] = gettext("");
-
 	$i = 0;
 	$used_ports = array();
 	while (isset($post['transport' . $i])) {
@@ -1118,71 +1090,97 @@ function netsnmp_validate_netsnmptrapd($post, &$input_errors) {
 	}
 
 	/* donotretainnotificationlogs: yes, no */
+	if (!in_array($post['donotretainnotificationlogs'], array('yes', 'no'))) {
+		$input_errors[] = gettext("Invalid Retain Notification Logs value.");
+	}
 	/* donotlogtraps: yes, no */
+	if (!in_array($post['donotlogtraps'], array('yes', 'no'))) {
+		$input_errors[] = gettext("Invalid Log Received Traps value.");
+	}
 	/* ignoreauthfailure: yes, no */
+	if (!in_array($post['ignoreauthfailure'], array('yes', 'no'))) {
+		$input_errors[] = gettext("Invalid Ignore Auth Failure Traps value.");
+	}
 	/* disableauthorization: yes, no */
+	if (!in_array($post['disableauthorization'], array('yes', 'no'))) {
+		$input_errors[] = gettext("Invalid Use Authorization value.");
+	}
 }
 
 /* snmptrapd - Community Auth tab*/
 function netsnmp_validate_netsnmptrapdcommunities($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmptrapdcommunities'])) {
-		$settings = $config['installedpackages']['netsnmptrapdcommunities']['config'];
-	} else {
-		$settings = array();
-	}
-	// $input_errors[] = gettext("");
 	/* type: log, net, execute */
+	foreach ($post['type'] as $t) {
+		if (!in_array($t, array('log', 'net', 'execute'))) {
+			$input_errors[] = gettext("Invalid Process Type.");
+		}
+	}
 	/* source restriction: 'default', IPv4 addr or subnet, IPv6 addr or subnet */
+	if (!empty($post['source']) &&
+	    ($post['source'] != "default") &&
+	    !is_ipaddrv4($post['source']) && !is_subnetv4($post['source']) &&
+	    !is_ipaddrv6($post['source']) && !is_subnetv6($post['source'])) {
+		$input_errors[] = gettext("The IP address or subnet is not valid or does not match the selecteed Address Family.");
+	}
 }
 
 /* snmptrapd - User Auth tab*/
 function netsnmp_validate_netsnmptrapdusers($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmptrapdusers'])) {
-		$settings = $config['installedpackages']['netsnmptrapdusers']['config'];
+	if (is_array($config['installedpackages']['netsnmpusers'])) {
+		$usettings = $config['installedpackages']['netsnmpusers']['config'];
 	} else {
-		$settings = array();
+		$usettings = array();
 	}
-	// $input_errors[] = gettext("");
 	/* username: valid user */
+	$found_user = false;
+	foreach ($usettings as $user) {
+		if ($post['username'] == $user['username']) {
+			$found_user = true;
+		}
+	}
+	if (!$found_user) {
+		$input_errors[] = gettext("Invalid Trap User.");
+	}
 	/* type: log, net, execute */
+	foreach ($post['type'] as $t) {
+		if (!in_array($t, array('log', 'net', 'execute'))) {
+			$input_errors[] = gettext("Invalid Process Type.");
+		}
+	}
 	/* secmodel: usm, tsm */
+	if (!in_array($post['secmodel'], array('usm', 'tsm'))) {
+		$input_errors[] = gettext("Invalid Security Model type.");
+	}
 	/* level: priv, auth, noauth, none */
+	if (!in_array($post['level'], array('priv', 'auth', 'noauth', 'none'))) {
+		$input_errors[] = gettext("Invalid Minimum Security Level.");
+	}
 }
 
 /* snmptrapd - Trap Handles tab */
 function netsnmp_validate_netsnmptrapdtraphandles($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmptrapdtraphandles'])) {
-		$settings = $config['installedpackages']['netsnmptrapdtraphandles']['config'];
-	} else {
-		$settings = array();
-	}
-	// $input_errors[] = gettext("");
 	/* program: file exists, is executable */
+	if (!empty($post['program']) &&
+	    (!file_exists($post['program']) || !is_executable($post['program']))) {
+		$input_errors[] = gettext("The supplied command does not exist or is not executable.");
+	}
 }
 
 /* snmptrapd - Forwarding of traps to other hosts */
 function netsnmp_validate_netsnmptrapdforwards($post, &$input_errors) {
 	global $config;
 
-	if (is_array($config['installedpackages']['netsnmptrapdforwards'])) {
-		$settings = $config['installedpackages']['netsnmptrapdforwards']['config'][0];
-	} else {
-		$settings = array();
-	}
-	$nwsettings = &$config['installedpackages']['netsnmptrapdforwards']['config'];
-	// $input_errors[] = gettext("");
 	/* Transport Type:
 		D/TLS hostname.
 		UDP/TCP hostname, IPv4 addr
 		UDP6/TCP6 hostname, IPv6 addr
 		 */
-
 	$i = 0;
 	$used_ports = array();
 	while (isset($post['transport' . $i])) {
