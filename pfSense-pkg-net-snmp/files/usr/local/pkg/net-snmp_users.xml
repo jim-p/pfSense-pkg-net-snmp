@@ -244,11 +244,14 @@ defVersion 3</pre>
 			<size>20</size>
 		</field>
 		<field>
-			<fielddescr>Cert Fingerprint</fielddescr>
-			<fieldname>fingerprint</fieldname>
-			<description><![CDATA[The fingerprint of a certificate to match.]]></description>
-			<type>input</type>
-			<size>80</size>
+			<fielddescr>User Certificate</fielddescr>
+			<fieldname>user_cert</fieldname>
+			<description><![CDATA[The SSL User Certficate for use with DTLS.<br>
+					Choose "None" if DTLS will not be used. (Default: none)]]></description>
+			<type>select_source</type>
+			<source><![CDATA[netsnmp_get_certs()]]></source>
+			<source_name>descr</source_name>
+			<source_value>refid</source_value>
 		</field>
 		<field>
 			<fielddescr>Certificate Field</fielddescr>

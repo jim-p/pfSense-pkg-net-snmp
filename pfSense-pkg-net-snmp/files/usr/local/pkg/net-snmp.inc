@@ -24,6 +24,7 @@ require_once("globals.inc");
 require_once("services.inc");
 require_once("service-utils.inc");
 require_once("pfsense-utils.inc");
+require_once("certs.inc");
 
 global $snmpd_config_file;
 $snmpd_config_file = "/var/etc/netsnmpd.conf";
@@ -31,6 +32,10 @@ global $snmpd_users_file;
 $snmpd_users_file = "/var/etc/netsnmpd-users.conf";
 global $snmptrapd_config_file;
 $snmptrapd_config_file = "/var/etc/netsnmptrapd.conf";
+global $snmpd_cert_dir;
+$snmpd_cert_dir = "/usr/local/share/snmp/tls/certs";
+global $snmpd_certkey_dir;
+$snmpd_certkey_dir = "/usr/local/share/snmp/tls/private";
 
 function netsnmp_install_command() {
 	global $config;
@@ -58,8 +63,8 @@ function netsnmp_get_ca_certs() {
 	return $ca_arr;
 }
 
-/* Get a list of server certificates for use with localCert */
-function netsnmp_get_server_certs() {
+/* Get a list of certificates */
+function netsnmp_get_certs() {
 	global $config;
 	$cert_arr = array();
 	$cert_arr[] = array('refid' => 'none', 'descr' => 'None');
@@ -89,13 +94,28 @@ function netsnmp_get_usernames() {
 
 /***************************************************************************
  *
+ * Support functions
+ *
+ ***************************************************************************/
+
+/* Return a certificate fingerprint formatted in the way that snmpd wants. */
+function netsnmp_cert_get_fingerprint($cert) {
+	return strtoupper(preg_replace('/(..)(?!$)/', '\1:', openssl_x509_fingerprint($cert, 'SHA1')));
+}
+function netsnmp_cert_get_keyid($cert) {
+	$details = openssl_x509_parse($cert);
+	return $details['extensions']['subjectKeyIdentifier'];
+}
+
+/***************************************************************************
+ *
  * Daemon Configuration for snmpd
  *
  ***************************************************************************/
 
 /* Write snmpd config file */
 function netsnmp_resync() {
-	global $config, $snmpd_config_file, $snmpd_users_file;
+	global $config, $snmpd_config_file, $snmpd_users_file, $snmpd_cert_dir, $snmpd_certkey_dir;
 
 	/* Global Settings tab */
 	$nsettings = &$config['installedpackages']['netsnmp']['config'][0];
@@ -107,6 +127,7 @@ function netsnmp_resync() {
 	}
 
 	$snmpd_config = "";
+	$tls_active = false;
 
 	/* The binding / agent addresses control where and how snmpd listens for incoming connections. */
 	$agentaddresses = array();
@@ -126,6 +147,10 @@ function netsnmp_resync() {
 		/* Transport is optional (UDP is assumed) */
 		if (!empty($agent['transport'])) {
 			$aa = "{$agent['transport']}:{$aa}";
+		}
+		/* If a TLS mode is active, note it for later. */
+		if (strpos($agent['transport'], 'tls') !== false) {
+			$tls_active = true;
 		}
 		/* Only keep this entry if it contains data */
 		if (!empty($aa)) {
@@ -166,15 +191,35 @@ function netsnmp_resync() {
 /*
 	TODO: Implement certificate backend, see
 	http://www.net-snmp.org/wiki/index.php/Using_DTLS
-
-	/var/net-snmp/cert_indexes
-
-	[snmp] localCert <specifier>
-	[snmp] trustCert <specifier>
-
-	<ca_cert>5841c3857bea2</ca_cert>
-	<server_cert>5841c3c235ab0</server_cert>
 */
+	if ($tls_active) {
+		if (!is_dir($snmpd_cert_dir)) {
+			safe_mkdir($snmpd_cert_dir);
+		}
+		if (!is_dir($snmpd_certkey_dir)) {
+			safe_mkdir($snmpd_certkey_dir);
+		}
+
+		// $snmpd_cert_dir
+		/* Write CA */
+		$ca = lookup_ca($nsettings['ca_cert']);
+		if ($ca) {
+			file_put_contents("{$snmpd_cert_dir}/ca.crt", base64_decode($ca['crt']));
+			chmod($snmpd_cert_dir . '/ca.crt', 0660);
+			//$snmpd_config .= "[snmp] trustCert " . netsnmp_cert_get_keyid(base64_decode($ca['crt'])) . "\n";
+			$snmpd_config .= "[snmp] trustCert {$snmpd_cert_dir}/ca.crt\n";
+		}
+		/* Write server certificate */
+		$cert = lookup_cert($nsettings['server_cert']);
+		if ($cert) {
+			file_put_contents("{$snmpd_cert_dir}/snmpd.crt", base64_decode($cert['crt']));
+			chmod($snmpd_cert_dir . '/snmpd.crt', 0660);
+			file_put_contents("{$snmpd_certkey_dir}/snmpd.key", base64_decode($cert['prv']));
+			chmod($snmpd_certkey_dir . '/snmpd.key', 0660);
+			//$snmpd_config .= "[snmp] localCert " . netsnmp_cert_get_keyid(base64_decode($cert['crt'])) . "\n";
+			$snmpd_config .= "[snmp] localCert {$snmpd_cert_dir}/snmpd.crt\n";
+		}
+	}
 
 	/* Host Information tab */
 	$nhisettings = &$config['installedpackages']['netsnmphostinfo']['config'][0];
@@ -281,17 +326,30 @@ function netsnmp_resync() {
 			   and then the option defines which cert field to use, or a manual override to map to a
 			   specific user directly.
 			 */
-			$snmpd_config .= "certSecName " .
-					 "{$user['priority']} " .
-					 "{$user['fingerprint']} " .
-					 "--{$user['options']}";
-			/* If SecName was chosen, define the username directly */
-			if ($user['options'] == "sn") {
-				$snmpd_config .= " {$user['secname']}";
+
+			// netsnmp_cert_get_fingerprint(base64_decode($cert['crt']));
+			/* Write user certificate */
+			$cert = lookup_cert($user['user_cert']);
+			if ($cert) {
+				file_put_contents("{$snmpd_cert_dir}/{$user['username']}.crt", base64_decode($cert['crt']));
+				chmod("{$snmpd_cert_dir}/{$user['username']}.crt", 0660);
+				file_put_contents("{$snmpd_certkey_dir}/{$user['username']}.key", base64_decode($cert['prv']));
+				chmod("{$snmpd_certkey_dir}/{$user['username']}.key", 0660);
+				$user['fingerprint'] = netsnmp_cert_get_keyid(base64_decode($cert['crt']));
+
+				$snmpd_config .= "certSecName " .
+						 "{$user['priority']} " .
+						 "{$user['fingerprint']} " .
+						 "--{$user['options']}";
+				/* If SecName was chosen, define the username directly */
+				if ($user['options'] == "sn") {
+					$snmpd_config .= " {$user['secname']}";
+				}
+				$snmpd_config .= "\n";
 			}
-			$snmpd_config .= "\n";
 		}
 	}
+
 
 	/* Don't bother to write the users config if there are no users */
 	if (!empty($snmpd_users_config)) {
@@ -485,7 +543,7 @@ EOF;
 /usr/bin/killall -9 snmpd 2>/dev/null
 sleep 1
 
-/usr/local/sbin/snmpd -Ls d -V \
+/usr/local/sbin/snmpd -Ls d \
 			-p /var/run/net_snmpd.pid \
 			-M /usr/share/snmp/mibs/:/usr/local/share/snmp/mibs \
 			-C \

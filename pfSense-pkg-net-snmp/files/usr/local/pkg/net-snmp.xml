@@ -198,7 +198,7 @@
 			<description><![CDATA[The SSL Server Certficate for use with DTLS.<br>
 					Choose "None" if DTLS will not be used. (Default: none)]]></description>
 			<type>select_source</type>
-			<source><![CDATA[netsnmp_get_server_certs()]]></source>
+			<source><![CDATA[netsnmp_get_certs()]]></source>
 			<source_name>descr</source_name>
 			<source_value>refid</source_value>
 		</field>
