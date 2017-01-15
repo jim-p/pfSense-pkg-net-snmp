@@ -958,6 +958,11 @@ function netsnmp_validate_netsnmphostinfo($post, &$input_errors) {
 function netsnmp_validate_netsnmpusers($post, &$input_errors) {
 	global $config;
 
+	/* Username cannot be blank */
+	if (empty($post['username'])) {
+		$input_errors[] = gettext("The username cannot be blank.");
+	}
+
 	/* snmpv3_type: user, cert, both */
 	if (!in_array($post['snmpv3_type'], array('user', 'cert', 'both'))) {
 		$input_errors[] = gettext("Invalid SNMPv3 user type.");

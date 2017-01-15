@@ -73,8 +73,19 @@
 	</adddeleteeditpagefields>
 	<fields>
 		<field>
-			<name>SNMPv3 Entry Type</name>
+			<name>SNMPv3 User</name>
 			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr></fielddescr>
+			<description>
+				<![CDATA[
+				SNMPv3 user entries define accounts that can query this SNMP agent.
+				Entries can be for username and password authentication (USM), certificate-based authentication (TSM),
+				or both.
+				]]>
+			</description>
+			<type>info</type>
 		</field>
 		<field>
 			<fielddescr>Username</fielddescr>
@@ -92,9 +103,9 @@
 			<type>select</type>
 			<default_value>user</default_value>
 			<options>
-				<option><name>User Entry</name><value>user</value></option>
-				<option><name>Certificate Mapping</name><value>cert</value></option>
-				<option><name>Both</name><value>both</value></option>
+				<option><name>User Entry (TSM)</name><value>user</value></option>
+				<option><name>Certificate Mapping (TSM)</name><value>cert</value></option>
+				<option><name>Both User Entry and Certificate Mapping</name><value>both</value></option>
 			</options>
 		</field>
 		<field>
