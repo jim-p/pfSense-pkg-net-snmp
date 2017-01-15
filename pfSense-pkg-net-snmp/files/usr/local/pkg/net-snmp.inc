@@ -40,6 +40,29 @@ $snmpd_certkey_dir = "/usr/local/share/snmp/tls/private";
 function netsnmp_install_command() {
 	global $config;
 	/* Make some default settings/entries/users, if necessary */
+	if (!is_array($config['installedpackages']['netsnmpusers'])) {
+		$config['installedpackages']['netsnmpusers'] = array();
+	}
+	if (!is_array($config['installedpackages']['netsnmpusers']['config'])) {
+		$config['installedpackages']['netsnmpusers']['config'] = array();
+		/* A temp pseudo-random password for this default account. */
+		$temp_password = bin2hex(openssl_random_pseudo_bytes(16));
+		$config['installedpackages']['netsnmpusers']['config'][] = array (
+			'username' => 'manager',
+			'snmpv3_type' => 'user',
+			'description' => 'manager',
+			'rorwuser' => 'rwuser',
+			'baseoid' => '',
+			'authtype' => 'SHA',
+			'password' => $temp_password,
+			'privacyprotocol' => 'AES',
+			'passphrase' => $temp_password,
+			'minseclevusm' => 'noauth'
+		);
+	}
+	if (empty($config['installedpackages']['netsnmptrapgen']['config'][0]['iquerysecname'])) {
+		$config['installedpackages']['netsnmptrapgen']['config'][0]['iquerysecname'] = 'manager';
+	}
 }
 
 /***************************************************************************

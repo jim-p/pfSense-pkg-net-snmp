@@ -82,13 +82,23 @@
 				The NET-SNMP Daemon responds to Simple Network Management Protocol (SNMP) requests from SNMP clients.
 				This daemon supports SNMPv1, SNMPv2c, and SNMPv3 with user authorization and transport security.
 				<br/><br/>
-				To get started, configure the settings on this tab and the Host Information tab, then define Communities
-				and/or Users to control who is allowed to send incoming requests.
+				To get started, configure the settings on this tab and the Host Information tab. By default, the
+				package creates a "manager" user with a pseudo-random password to make internal queries. Change
+				the password for this default user on the Users as soon as possible.
 				<div class="infoblock">
 				SNMP information is organized hierarchically in a tree, with each node being an Object Identifier (OID).
 				Management Information Base (MIB) files define groups of information and named mappings for OIDs.
 				Clients query a specific OID and can get a single result or they can "walk" the tree for multiple
 				nested results.
+				<br/><br/>
+				To use traditional plain text SNMPv1 or SNMPv2c with basic community-name security, create entries
+				the Communities tab.
+				<br/><br/>
+				To use SNMPv3 user authentication with passwords and optional encryption, create entries on the User tab.
+				<br/><br/>
+				To use TLS transport security, create a certificate structure (Certificate Authority, Server Certificate,
+				User Certificates). Select the CA and Server certificate on the General tab and then create certificate
+				mappings on the Users tab.
 				</div>
 				]]>
 			</description>

@@ -194,7 +194,7 @@ defVersion 3</pre>
 			<size>20</size>
 		</field>
 		<field>
-			<fielddescr>Minimum USM Security Level</fielddescr>
+			<fielddescr>Min USM Security Level</fielddescr>
 			<fieldname>minseclevusm</fieldname>
 			<description><![CDATA[The minimum security level allowed for this user when connecting via USM.]]></description>
 			<type>select</type>
@@ -218,8 +218,34 @@ defVersion 3</pre>
 				SNMPv3 Certificate Mapping entries define a relationship between client certificates and SNMP users.
 				<div class="infoblock">
 					These entries do not define general characteristics, but specific mappings.
-					A certificate is identified uniquely by its fingerprint,
-					and the field paramter tells snmpd what part of the certificate contains the username to match.
+					The field paramter tells snmpd what part of the certificate contains the username to match.
+					<br/><br/>
+					Create a Certificate Authority, a Server Certificate, and User Certificates before configuring
+					certificate mappings.
+					<br/><br/>
+					Export the CA certificate, Server Certificate, User Certificate, and the User Certificate Key
+					and copy them to the client. On UNIX and similar systems, these files should be placed in ~/.snmp/tls/
+					in the following structure:
+					<pre>
+~/.snmp/tls/ca-certs/ca.crt
+~/.snmp/tls/certs/snmpd.crt
+~/.snmp/tls/certs/myuser.crt
+~/.snmp/tls/private/myuser.key</pre>
+					To use the certificates when connecting to the server, pass the appropriate names to an
+					SNMP command such as snmpget.
+					<pre>snmpget -v 3 -t 10 --defSecurityModel=tsm --defSecurityName=myuser \
+	--defSecurityLevel=authPriv --localCert=myuser --peerCert=snmpd --trustCert=ca \
+	tls:server.example.com:10161 sysContact.0</pre>
+					These parameters can also be defined in ~/.snmp/snmp.conf or in a host-specific
+					configuration file such as ~/.snmp/hosts/server.conf
+					<pre>
+defVersion 3
+defSecurityModel tsm
+defSecurityName myuser
+defSecurityLevel authPriv
+localCert myuser
+peerCert snmpd
+trustCert ca</pre>
 				</div>
 				]]>
 			</description>
@@ -266,7 +292,7 @@ defVersion 3</pre>
 			<size>30</size>
 		</field>
 		<field>
-			<fielddescr>Minimum TSM Security Level</fielddescr>
+			<fielddescr>Min TSM Security Level</fielddescr>
 			<fieldname>minseclevtsm</fieldname>
 			<description><![CDATA[The minimum security level allowed for this user when connecting via TSM.]]></description>
 			<type>select</type>

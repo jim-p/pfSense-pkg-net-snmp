@@ -196,7 +196,7 @@
 					<pre>snmpwalk -v 3 -l authPriv -a SHA -A 1234567890 -u myuser -x AES -X 1234567890 localhost nsExtendOutput1</pre>
 
 					To retrieve the output individually, use the configured extend Name as part of the OID:
-					<pre>snmpget -v 3 -l authPriv -a SHA -A 1234567890 -u myuser -x AES -X 1234567890 localhost nsExtendOutputFull.\"ls\"</pre>
+					<pre>snmpget -v 3 -l authPriv -a SHA -A 1234567890 -u myuser -x AES -X 1234567890 localhost nsExtendOutputFull.\"uname\"</pre>
 				</div>
 				]]>
 			</description>
