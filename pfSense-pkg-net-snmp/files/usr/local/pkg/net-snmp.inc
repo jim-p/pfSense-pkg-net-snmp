@@ -195,19 +195,24 @@ function netsnmp_resync() {
 	if ($tls_active) {
 		if (!is_dir($snmpd_cert_dir)) {
 			safe_mkdir($snmpd_cert_dir);
+		} else {
+			/* Cleanup old certificates. */
+			array_map('unlink', glob("{$snmpd_cert_dir}/*.crt"));
 		}
 		if (!is_dir($snmpd_certkey_dir)) {
 			safe_mkdir($snmpd_certkey_dir);
+		} else {
+			/* Cleanup old certificate keys. */
+			array_map('unlink', glob("{$snmpd_cert_dir}/*.key"));
 		}
 
-		// $snmpd_cert_dir
 		/* Write CA */
 		$ca = lookup_ca($nsettings['ca_cert']);
 		if ($ca) {
 			file_put_contents("{$snmpd_cert_dir}/ca.crt", base64_decode($ca['crt']));
 			chmod($snmpd_cert_dir . '/ca.crt', 0660);
 			//$snmpd_config .= "[snmp] trustCert " . netsnmp_cert_get_keyid(base64_decode($ca['crt'])) . "\n";
-			$snmpd_config .= "[snmp] trustCert {$snmpd_cert_dir}/ca.crt\n";
+			$snmpd_config .= "[snmp] trustCert ca\n";
 		}
 		/* Write server certificate */
 		$cert = lookup_cert($nsettings['server_cert']);
@@ -217,7 +222,7 @@ function netsnmp_resync() {
 			file_put_contents("{$snmpd_certkey_dir}/snmpd.key", base64_decode($cert['prv']));
 			chmod($snmpd_certkey_dir . '/snmpd.key', 0660);
 			//$snmpd_config .= "[snmp] localCert " . netsnmp_cert_get_keyid(base64_decode($cert['crt'])) . "\n";
-			$snmpd_config .= "[snmp] localCert {$snmpd_cert_dir}/snmpd.crt\n";
+			$snmpd_config .= "[snmp] localCert snmpd\n";
 		}
 	}
 
@@ -310,10 +315,10 @@ function netsnmp_resync() {
 
 			/* Each SNMPv3 user also needs an rouser or rwuser line to define its access */
 			$snmpd_config .= "{$user['rorwuser']} " .
-					 "-s {$user['secmodel']} " .
+					 "-s usm " .
 					 "\"{$user['username']}\"";
-			if ($user['minseclev'] != "none") {
-				$snmpd_config .= " {$user['minseclev']}";
+			if ($user['minseclevusm'] != "none") {
+				$snmpd_config .= " {$user['minseclevusm']}";
 				if (!empty($user['baseoid'])) {
 					$snmpd_config .= " {$user['baseoid']}";
 				}
@@ -335,11 +340,10 @@ function netsnmp_resync() {
 				chmod("{$snmpd_cert_dir}/{$user['username']}.crt", 0660);
 				file_put_contents("{$snmpd_certkey_dir}/{$user['username']}.key", base64_decode($cert['prv']));
 				chmod("{$snmpd_certkey_dir}/{$user['username']}.key", 0660);
-				$user['fingerprint'] = netsnmp_cert_get_keyid(base64_decode($cert['crt']));
 
 				$snmpd_config .= "certSecName " .
 						 "{$user['priority']} " .
-						 "{$user['fingerprint']} " .
+						 "{$user['username']} " .
 						 "--{$user['options']}";
 				/* If SecName was chosen, define the username directly */
 				if ($user['options'] == "sn") {
@@ -347,6 +351,18 @@ function netsnmp_resync() {
 				}
 				$snmpd_config .= "\n";
 			}
+
+			/* Each SNMPv3 user also needs an rouser or rwuser line to define its access */
+			$snmpd_config .= "{$user['rorwuser']} " .
+					 "-s tsm " .
+					 "\"{$user['username']}\"";
+			if ($user['minseclevtsm'] != "none") {
+				$snmpd_config .= " {$user['minseclevtsm']}";
+				if (!empty($user['baseoid'])) {
+					$snmpd_config .= " {$user['baseoid']}";
+				}
+			}
+			$snmpd_config .= "\n";
 		}
 	}
 
@@ -939,17 +955,13 @@ function netsnmp_validate_netsnmpusers($post, &$input_errors) {
 	if (strlen($post['passphrase']) < 8) {
 		$input_errors[] = gettext("The supplied Passphrase is too short. It must be 8 characters or longer.");
 	}
-	/* secmodel: usm, tsm */
-	if (!in_array($post['secmodel'], array('usm', 'tsm'))) {
-		$input_errors[] = gettext("Invalid Security Model type.");
-	}
 	/* rorwuser: rouser, rwuser */
 	if (!in_array($post['rorwuser'], array('rouser', 'rwuser'))) {
 		$input_errors[] = gettext("Invalid Read/Write Access type.");
 	}
-	/* minseclev: priv, auth, noauth, none */
-	if (!in_array($post['minseclev'], array('priv', 'auth', 'noauth', 'none'))) {
-		$input_errors[] = gettext("Invalid Minimum Security Level.");
+	/* minseclevusm: priv, auth, noauth, none */
+	if (!in_array($post['minseclevusm'], array('priv', 'auth', 'noauth', 'none'))) {
+		$input_errors[] = gettext("Invalid USM Minimum Security Level.");
 	}
 	/* priority: int, positive */
 	if (!empty($post['priority']) && !is_numericint($post['priority'])) {
@@ -958,6 +970,10 @@ function netsnmp_validate_netsnmpusers($post, &$input_errors) {
 	/* options: 'cn', 'sn', 'rfc822', 'dns', 'ip', 'any' */
 	if (!in_array($post['options'], array('cn', 'sn', 'rfc822', 'dns', 'ip', 'any'))) {
 		$input_errors[] = gettext("Invalid Certificate Field type.");
+	}
+	/* minseclevtsm: priv, auth, noauth, none */
+	if (!in_array($post['minseclevtsm'], array('priv', 'auth', 'noauth', 'none'))) {
+		$input_errors[] = gettext("Invalid TSM Minimum Security Level.");
 	}
 }
 

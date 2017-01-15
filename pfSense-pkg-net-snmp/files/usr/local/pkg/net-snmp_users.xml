@@ -77,6 +77,13 @@
 			<type>listtopic</type>
 		</field>
 		<field>
+			<fielddescr>Username</fielddescr>
+			<fieldname>username</fieldname>
+			<description><![CDATA[SNMPv3 username, including any prefixes.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+		<field>
 			<fielddescr>Entry Type</fielddescr>
 			<fieldname>snmpv3_type</fieldname>
 			<description><![CDATA[The type of entry described by these settings.
@@ -94,6 +101,29 @@
 			<fielddescr>Description</fielddescr>
 			<fieldname>description</fieldname>
 			<description><![CDATA[A description of this entry.]]></description>
+			<type>input</type>
+			<size>20</size>
+		</field>
+
+		<field>
+			<name>SNMPv3 Access Control</name>
+			<type>listtopic</type>
+		</field>
+		<field>
+			<fielddescr>Read/Write Access</fielddescr>
+			<fieldname>rorwuser</fieldname>
+			<description><![CDATA[Select the type of access this user will have.]]></description>
+			<type>select</type>
+			<default_value>rouser</default_value>
+			<options>
+				<option><name>Read Only (GET, GETNEXT)</name><value>rouser</value></option>
+				<option><name>Read/Write (GET, GETNEXT, SET)</name><value>rwuser</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Base OID</fielddescr>
+			<fieldname>baseoid</fieldname>
+			<description><![CDATA[Restrict the user to part of the tree rooted at this OID. Leave blank to allow full access.]]></description>
 			<type>input</type>
 			<size>20</size>
 		</field>
@@ -123,13 +153,6 @@ defVersion 3</pre>
 				]]>
 			</description>
 			<type>info</type>
-		</field>
-		<field>
-			<fielddescr>Username</fielddescr>
-			<fieldname>username</fieldname>
-			<description><![CDATA[SNMPv3 username, including any prefixes.]]></description>
-			<type>input</type>
-			<size>20</size>
 		</field>
 		<field>
 			<fielddescr>Authentication Type</fielddescr>
@@ -171,36 +194,9 @@ defVersion 3</pre>
 			<size>20</size>
 		</field>
 		<field>
-			<fielddescr>Security Model</fielddescr>
-			<fieldname>secmodel</fieldname>
-			<description><![CDATA[The security model for this user. With user authentication, choose USM. For D/TLS, use TSM.]]></description>
-			<type>select</type>
-			<default_value>usm</default_value>
-			<options>
-				<option><name>User Security (usm)</name><value>usm</value></option>
-				<option><name>Transport Security (tsm)</name><value>tsm</value></option>
-			</options>
-		</field>
-
-		<field>
-			<name>SNMPv3 Access Control</name>
-			<type>listtopic</type>
-		</field>
-		<field>
-			<fielddescr>Read/Write Access</fielddescr>
-			<fieldname>rorwuser</fieldname>
-			<description><![CDATA[Select the type of access this user will have.]]></description>
-			<type>select</type>
-			<default_value>rouser</default_value>
-			<options>
-				<option><name>Read Only (GET, GETNEXT)</name><value>rouser</value></option>
-				<option><name>Read/Write (GET, GETNEXT, SET)</name><value>rwuser</value></option>
-			</options>
-		</field>
-		<field>
-			<fielddescr>Minimum Security Level</fielddescr>
-			<fieldname>minseclev</fieldname>
-			<description><![CDATA[The minimum security level allowed for this user.]]></description>
+			<fielddescr>Minimum USM Security Level</fielddescr>
+			<fieldname>minseclevusm</fieldname>
+			<description><![CDATA[The minimum security level allowed for this user when connecting via USM.]]></description>
 			<type>select</type>
 			<default_value>priv</default_value>
 			<options>
@@ -210,13 +206,7 @@ defVersion 3</pre>
 				<option><name>Unspecified</name><value>none</value></option>
 			</options>
 		</field>
-		<field>
-			<fielddescr>Base OID</fielddescr>
-			<fieldname>baseoid</fieldname>
-			<description><![CDATA[Restrict the user to part of the tree rooted at this OID. Leave blank to allow full access.]]></description>
-			<type>input</type>
-			<size>20</size>
-		</field>
+
 		<field>
 			<name>SNMPv3 Certificate Mapping Information</name>
 			<type>listtopic</type>
@@ -274,6 +264,19 @@ defVersion 3</pre>
 			<description><![CDATA[The name to use when Manual Security Name is chosen above.]]></description>
 			<type>input</type>
 			<size>30</size>
+		</field>
+		<field>
+			<fielddescr>Minimum TSM Security Level</fielddescr>
+			<fieldname>minseclevtsm</fieldname>
+			<description><![CDATA[The minimum security level allowed for this user when connecting via TSM.]]></description>
+			<type>select</type>
+			<default_value>priv</default_value>
+			<options>
+				<option><name>Private (Encryption Required)</name><value>priv</value></option>
+				<option><name>Authenticated</name><value>auth</value></option>
+				<option><name>Unauthenticated</name><value>noauth</value></option>
+				<option><name>Unspecified</name><value>none</value></option>
+			</options>
 		</field>
 	</fields>
 	<custom_php_resync_config_command>
